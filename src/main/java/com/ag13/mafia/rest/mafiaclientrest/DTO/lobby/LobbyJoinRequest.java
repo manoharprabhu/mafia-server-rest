@@ -7,6 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class LobbyCreateRequest {
+public class LobbyJoinRequest {
+    private String lobbyId;
     private String playerName;
 }

@@ -3,6 +3,8 @@ package com.ag13.mafia.rest.mafiaclientrest.service;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyCreateRequest;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyCreateResponse;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyJoinRequest;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyJoinResponse;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
@@ -58,7 +60,7 @@ public class LobbyService {
         player.setVotedForPlayerId(null);
 
         var playersMap = new ConcurrentHashMap<String, Player>();
-        playersMap.put(lobbyId, player);
+        playersMap.put(playerId, player);
 
         var game = new Game();
         game.setLobbyId(lobbyId);
@@ -71,6 +73,76 @@ public class LobbyService {
         this.currentGame = game;
         this.currentGameHostPlayerId = playerId;
 
-        return LobbyCreateResponse.createSuccessResponse(playerId);
+        return LobbyCreateResponse.createSuccessResponse(playerId, lobbyId);
+    }
+
+    public HttpResponse<LobbyJoinResponse> joinLobby(LobbyJoinRequest request) {
+        if(currentGame == null) {
+            log.error("There is no active game to join");
+            var response = new HttpResponse<LobbyJoinResponse>();
+            response.setSuccess(false);
+            response.setMessage("There is no active game to join");
+            return response;
+        }
+
+        var playerName = request.getPlayerName();
+        var lobbyId = request.getLobbyId();
+
+        if(playerName == null || playerName.isEmpty()) {
+            log.error("Player name is null or empty");
+            var response = new HttpResponse<LobbyJoinResponse>();
+            response.setSuccess(false);
+            response.setMessage("Player name is null or empty");
+            return response;
+        }
+
+        if(lobbyId == null || lobbyId.isEmpty()) {
+            log.error("Lobby id is null or empty");
+            var response = new HttpResponse<LobbyJoinResponse>();
+            response.setSuccess(false);
+            response.setMessage("Lobby id is null or empty");
+            return response;
+        }
+
+        if(!currentGame.getLobbyId().equals(lobbyId)) {
+            log.error("Lobby ID " + lobbyId + " does not exist");
+            var response = new HttpResponse<LobbyJoinResponse>();
+            response.setSuccess(false);
+            response.setMessage("Lobby ID " + lobbyId + " does not exist");
+            return response;
+        }
+
+        if(!currentGame.getCurrentPhase().equals(Phase.WAITING_FOR_PLAYERS)) {
+            log.error("Lobby is not accepting new players.");
+            var response = new HttpResponse<LobbyJoinResponse>();
+            response.setSuccess(false);
+            response.setMessage("Lobby is not accepting new players");
+            return response;
+        }
+
+        if(currentGame.getPlayers().size() >= 16) {
+            log.error("Lobby is at full capacity. Cannot join");
+            var response = new HttpResponse<LobbyJoinResponse>();
+            response.setSuccess(false);
+            response.setMessage("Lobby is at full capacity");
+            return response;
+        }
+
+        var playerId = idGeneratorService.getId(PlayerIDLength);
+        var player = new Player();
+        player.setId(playerId);
+        player.setAlive(true);
+        player.setName(playerName);
+        player.setInspections(new ConcurrentLinkedQueue<>());
+        player.setRole(null);
+        player.setHeadhunterTargetPlayerId(null);
+        player.setNightTargetPlayerId(null);
+        player.setHasActedThisPhase(false);
+        player.setInspectedTonight(false);
+        player.setVotedForPlayerId(null);
+
+        currentGame.getPlayers().put(playerId, player);
+
+        return LobbyJoinResponse.createSuccessResponse(playerId);
     }
 }

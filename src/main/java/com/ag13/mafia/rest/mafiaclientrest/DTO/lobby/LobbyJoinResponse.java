@@ -5,17 +5,14 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class LobbyCreateResponse {
+public class LobbyJoinResponse {
     @Getter
     private String playerId;
-    @Getter
-    private String lobbyId;
 
-    public static HttpResponse<LobbyCreateResponse> createSuccessResponse(String playerId, String lobbyId) {
-        var lobbyResponse = new LobbyCreateResponse();
+    public static HttpResponse<LobbyJoinResponse> createSuccessResponse(String playerId) {
+        var lobbyResponse = new LobbyJoinResponse();
         lobbyResponse.playerId = playerId;
-        lobbyResponse.lobbyId = lobbyId;
-        var httpResponse = new HttpResponse<LobbyCreateResponse>();
+        var httpResponse = new HttpResponse<LobbyJoinResponse>();
         httpResponse.setSuccess(true);
         httpResponse.setMessage(null);
         httpResponse.setData(lobbyResponse);
