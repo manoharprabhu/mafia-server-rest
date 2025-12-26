@@ -1,10 +1,7 @@
 package com.ag13.mafia.rest.mafiaclientrest.service;
 
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyCreateRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyCreateResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyJoinRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyJoinResponse;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.*;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
@@ -12,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -144,5 +142,56 @@ public class LobbyService {
         currentGame.getPlayers().put(playerId, player);
 
         return LobbyJoinResponse.createSuccessResponse(playerId);
+    }
+
+    public HttpResponse<LobbyGetResponse> getLobby(LobbyGetRequest request) {
+        if(currentGame == null) {
+            log.error("There is no active game to get");
+            var response = new HttpResponse<LobbyGetResponse>();
+            response.setSuccess(false);
+            response.setMessage("There is no active game to get");
+            return response;
+        }
+
+        var lobbyId = request.getLobbyId();
+        if(lobbyId == null || lobbyId.isEmpty()) {
+            log.error("Lobby id is null or empty");
+            var response = new HttpResponse<LobbyGetResponse>();
+            response.setSuccess(false);
+            response.setMessage("Lobby id is null or empty");
+            return response;
+        }
+
+        var playerId = request.getPlayerId();
+        if(playerId == null || playerId.isEmpty()) {
+            log.error("Player id is null or empty");
+            var response = new HttpResponse<LobbyGetResponse>();
+            response.setSuccess(false);
+            response.setMessage("Player id is null or empty");
+            return response;
+        }
+
+        if(!currentGame.getLobbyId().equals(lobbyId)) {
+            log.error("Wrong lobby Id");
+            var response = new HttpResponse<LobbyGetResponse>();
+            response.setSuccess(false);
+            response.setMessage("Wrong lobby Id");
+            return response;
+        }
+
+        if(!currentGame.getPlayers().containsKey(playerId)) {
+            log.error("Player " + playerId + " cannot get the lobby because they have not joined it");
+            var response = new HttpResponse<LobbyGetResponse>();
+            response.setSuccess(false);
+            response.setMessage("Player " + playerId + " cannot get the lobby");
+            return response;
+        }
+
+        var playersList = new ArrayList<LobbyGetResponse.Player>();
+        var allPlayers = currentGame.getPlayers();
+        for(var key : allPlayers.keySet()) {
+            playersList.add(new LobbyGetResponse.Player(key, allPlayers.get(key).getName()));
+        }
+        return LobbyGetResponse.createSuccessResponse(playersList);
     }
 }
