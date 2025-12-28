@@ -1,6 +1,7 @@
 package com.ag13.mafia.rest.mafiaclientrest.DTO.lobby;
 
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
+import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -13,10 +14,14 @@ import java.util.List;
 @ToString
 public class LobbyGetResponse {
     List<Player> players;
+    String lobbyCreatorId;
+    Phase currentPhase;
 
-    public static HttpResponse<LobbyGetResponse> createSuccessResponse(List<Player> players) {
+    public static HttpResponse<LobbyGetResponse> createSuccessResponse(List<Player> players, String hostPlayerId, Phase currentPhase) {
         var lobbyGetResponse = new LobbyGetResponse();
         lobbyGetResponse.setPlayers(players);
+        lobbyGetResponse.setLobbyCreatorId(hostPlayerId);
+        lobbyGetResponse.setCurrentPhase(currentPhase);
         var httpResponse = new HttpResponse<LobbyGetResponse>();
         httpResponse.setSuccess(true);
         httpResponse.setMessage(null);

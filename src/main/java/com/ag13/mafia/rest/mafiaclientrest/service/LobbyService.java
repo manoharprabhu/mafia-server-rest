@@ -192,6 +192,6 @@ public class LobbyService {
         for(var key : allPlayers.keySet()) {
             playersList.add(new LobbyGetResponse.Player(key, allPlayers.get(key).getName()));
         }
-        return LobbyGetResponse.createSuccessResponse(playersList);
+        return LobbyGetResponse.createSuccessResponse(playersList, this.currentGameHostPlayerId, currentGame.getCurrentPhase());
     }
 }
