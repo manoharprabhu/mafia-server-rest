@@ -3,6 +3,7 @@ package com.ag13.mafia.rest.mafiaclientrest.domain;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
@@ -14,4 +15,6 @@ public class Game {
     int dayCount;
     int daysWithoutVillageKill;
     GameResult result;
+    List<String> systemMessages;
+    int timeRemainingInCurrentPhase;
 }

@@ -18,14 +18,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class LobbyService {
     @Autowired
     private IdGeneratorService idGeneratorService;
+    @Autowired
+    private GameService gameService;
+
     private final int LobbyIDLength = 5;
     private final int PlayerIDLength = 5;
 
-    private Game currentGame;
-    private String currentGameHostPlayerId;
-
     public HttpResponse<LobbyCreateResponse> createLobby(LobbyCreateRequest request) {
-        if(currentGame != null) {
+        if(gameService.getCurrentGame() != null) {
             log.error("Lobby has already been created");
             var response = new HttpResponse<LobbyCreateResponse>();
             response.setSuccess(false);
@@ -67,14 +67,16 @@ public class LobbyService {
         game.setDayCount(0);
         game.setCurrentPhase(Phase.WAITING_FOR_PLAYERS);
         game.setDaysWithoutVillageKill(0);
+        game.setSystemMessages(new ArrayList<>());
 
-        this.currentGame = game;
-        this.currentGameHostPlayerId = playerId;
+        gameService.setCurrentGame(game);
+        gameService.setCurrentGameHostPlayerId(playerId);
 
         return LobbyCreateResponse.createSuccessResponse(playerId, lobbyId);
     }
 
     public HttpResponse<LobbyJoinResponse> joinLobby(LobbyJoinRequest request) {
+        var currentGame = gameService.getCurrentGame();
         if(currentGame == null) {
             log.error("There is no active game to join");
             var response = new HttpResponse<LobbyJoinResponse>();
@@ -145,6 +147,7 @@ public class LobbyService {
     }
 
     public HttpResponse<LobbyGetResponse> getLobby(LobbyGetRequest request) {
+        var currentGame = gameService.getCurrentGame();
         if(currentGame == null) {
             log.error("There is no active game to get");
             var response = new HttpResponse<LobbyGetResponse>();
@@ -192,6 +195,6 @@ public class LobbyService {
         for(var key : allPlayers.keySet()) {
             playersList.add(new LobbyGetResponse.Player(key, allPlayers.get(key).getName()));
         }
-        return LobbyGetResponse.createSuccessResponse(playersList, this.currentGameHostPlayerId, currentGame.getCurrentPhase());
+        return LobbyGetResponse.createSuccessResponse(playersList, gameService.getCurrentGameHostPlayerId(), currentGame.getCurrentPhase());
     }
 }
