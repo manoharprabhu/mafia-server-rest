@@ -1,7 +1,6 @@
 package com.ag13.mafia.rest.mafiaclientrest.DTO.lobby;
 
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Role;
 import lombok.Getter;
 import lombok.Setter;

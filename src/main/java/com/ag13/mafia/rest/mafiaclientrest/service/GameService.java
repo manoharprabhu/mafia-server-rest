@@ -4,24 +4,66 @@ import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.GameGetRequest;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.GameGetResponse;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
+import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
 import lombok.Getter;
-import lombok.Setter;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
 public class GameService {
     @Getter
-    @Setter
     private Game currentGame;
-
     @Getter
-    @Setter
     private String currentGameHostPlayerId;
 
+    public void addNewPlayerToExistingGame(String playerId, String playerName) {
+        var player = new Player();
+        player.setId(playerId);
+        player.setAlive(true);
+        player.setName(playerName);
+        player.setInspections(new ConcurrentLinkedQueue<>());
+        player.setRole(null);
+        player.setHeadhunterTargetPlayerId(null);
+        player.setNightTargetPlayerId(null);
+        player.setHasActedThisPhase(false);
+        player.setInspectedTonight(false);
+        player.setVotedForPlayerId(null);
+        currentGame.getPlayers().put(playerId, player);
+    }
+
+    public void createNewGameWithplayer(String playerId, String playerName, String lobbyId) {
+        var player = new Player();
+        player.setId(playerId);
+        player.setAlive(true);
+        player.setName(playerName);
+        player.setInspections(new ConcurrentLinkedQueue<>());
+        player.setRole(null);
+        player.setHeadhunterTargetPlayerId(null);
+        player.setNightTargetPlayerId(null);
+        player.setHasActedThisPhase(false);
+        player.setInspectedTonight(false);
+        player.setVotedForPlayerId(null);
+
+        var playersMap = new ConcurrentHashMap<String, Player>();
+        playersMap.put(playerId, player);
+
+        var game = new Game();
+        game.setLobbyId(lobbyId);
+        game.setResult(null);
+        game.setPlayers(playersMap);
+        game.setDayCount(0);
+        game.setCurrentPhase(Phase.WAITING_FOR_PLAYERS);
+        game.setDaysWithoutVillageKill(0);
+        game.setSystemMessages(new ArrayList<>());
+
+        this.currentGame = game;
+        this.currentGameHostPlayerId = playerId;
+    }
     @SuppressWarnings("unchecked")
     public HttpResponse<GameGetResponse> getState(GameGetRequest request) {
         var lobbyId = request.getLobbyId();

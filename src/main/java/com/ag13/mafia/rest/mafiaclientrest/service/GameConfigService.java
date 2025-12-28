@@ -11,4 +11,6 @@ public class GameConfigService {
     private final int nightVoteDuration = 30;
     private final int minPlayers = 10;
     private final int maxPlayers = 16;
+    private final int lobbyIDLength = 5;
+    private final int playerIDLength = 5;
 }
