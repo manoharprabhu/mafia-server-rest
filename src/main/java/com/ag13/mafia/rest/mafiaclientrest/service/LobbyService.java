@@ -21,6 +21,9 @@ public class LobbyService {
     @Autowired
     private GameService gameService;
 
+    @Autowired
+    private GameConfigService gameConfigService;
+
     private final int LobbyIDLength = 5;
     private final int PlayerIDLength = 5;
 
@@ -120,7 +123,7 @@ public class LobbyService {
             return response;
         }
 
-        if(currentGame.getPlayers().size() >= 16) {
+        if(currentGame.getPlayers().size() >= gameConfigService.getMaxPlayers()) {
             log.error("Lobby is at full capacity. Cannot join");
             var response = new HttpResponse<LobbyJoinResponse>();
             response.setSuccess(false);
