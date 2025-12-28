@@ -3,7 +3,6 @@ package com.ag13.mafia.rest.mafiaclientrest.DTO.lobby;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -29,11 +28,6 @@ public class LobbyGetResponse {
         return httpResponse;
     }
 
-    @Getter
-    @Setter
-    @RequiredArgsConstructor
-    public static class Player {
-        private final String playerId;
-        private final String playerName;
+    public record Player(String playerId, String playerName) {
     }
 }

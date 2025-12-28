@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /*
 {
@@ -18,8 +20,7 @@ import java.util.List;
     "playerId": "p4",
     "name": "Alice",
     "role": "POLICE",
-    "alive": true,
-    "hasActed": false
+    "alive": true
   },
 
   "players": [
@@ -27,8 +28,6 @@ import java.util.List;
     { "playerId": "p2", "name": "Carol", "alive": true },
     { "playerId": "p3", "name": "Dan", "alive": false }
   ],
-
-  "allowedActions": ["VOTE"],
 
   "messages": [
     "Dan was killed last night"
@@ -46,8 +45,10 @@ public class GameGetResponse {
     private int timeRemainingSeconds;
     private You you;
     private List<Player> players;
-    private List<String> messages;
+    private List<Message> messages;
     private String gameResult;
+    private Map<String, String> voteMap;
+    private Map<String, Role> visibleRoles;
 
     @Getter
     @Setter
@@ -71,6 +72,30 @@ public class GameGetResponse {
             result.setPlayerId(player.getId());
             result.setName(player.getName());
             result.setAlive(player.isAlive());
+            return result;
+        }
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Message {
+        private long timestamp;
+        private String message;
+
+        public static Message create(com.ag13.mafia.rest.mafiaclientrest.domain.Message m) {
+            var result = new Message();
+            result.setMessage(m.getMessage());
+            result.setTimestamp(m.getTimestamp());
+            return result;
+        }
+
+        public static List<Message> create(List<com.ag13.mafia.rest.mafiaclientrest.domain.Message> messages) {
+            var result = new ArrayList<Message>();
+            for(var m : messages) {
+                result.add(create(m));
+            }
+
             return result;
         }
     }

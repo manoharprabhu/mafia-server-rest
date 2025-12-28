@@ -4,6 +4,7 @@ import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.GameGetRequest;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.GameGetResponse;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
+import com.ag13.mafia.rest.mafiaclientrest.domain.Message;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
 import lombok.Getter;
@@ -33,6 +34,7 @@ public class GameService {
         player.setHasActedThisPhase(false);
         player.setInspectedTonight(false);
         player.setVotedForPlayerId(null);
+        player.setPlayerSpecificMessages(new ConcurrentLinkedQueue<>());
         currentGame.getPlayers().put(playerId, player);
     }
 
@@ -48,6 +50,7 @@ public class GameService {
         player.setHasActedThisPhase(false);
         player.setInspectedTonight(false);
         player.setVotedForPlayerId(null);
+        player.setPlayerSpecificMessages(new ConcurrentLinkedQueue<>());
 
         var playersMap = new ConcurrentHashMap<String, Player>();
         playersMap.put(playerId, player);
@@ -59,7 +62,9 @@ public class GameService {
         game.setDayCount(0);
         game.setCurrentPhase(Phase.WAITING_FOR_PLAYERS);
         game.setDaysWithoutVillageKill(0);
-        game.setSystemMessages(new ArrayList<>());
+        game.setAllPlayerMessages(new ArrayList<>());
+        // todo set this from the Player object
+        //game.setPlayerSpecificMessages(new ConcurrentHashMap<>());
 
         this.currentGame = game;
         this.currentGameHostPlayerId = playerId;
@@ -93,9 +98,25 @@ public class GameService {
         }
         response.setGameResult(currentGame.getResult() != null ? currentGame.getResult().name() : null);
         response.setPhase(currentGame.getCurrentPhase());
-        response.setMessages(currentGame.getSystemMessages());
+
+        response.setMessages(new ArrayList<>());
+        for(Message m : currentGame.getAllPlayerMessages()) {
+            response.getMessages().add(GameGetResponse.Message.create(m));
+        }
+
+        // todo - set player specific messages from the Player object here
+//        response.setPlayerSpecificMessages(new ConcurrentHashMap<>());
+//        for(String key : currentGame.getPlayerSpecificMessages().keySet()) {
+//            var value = currentGame.getPlayerSpecificMessages().get(key);
+//            var messages = GameGetResponse.Message.create(value);
+//            response.getPlayerSpecificMessages().put(key, messages);
+//        }
+
+        response.setVisibleRoles(new ConcurrentHashMap<>());
+
         response.setDayNumber(currentGame.getDayCount());
         response.setTimeRemainingSeconds(currentGame.getTimeRemainingInCurrentPhase());
+        response.setVoteMap(new ConcurrentHashMap<>());
 
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());

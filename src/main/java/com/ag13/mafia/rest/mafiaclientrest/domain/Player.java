@@ -25,6 +25,8 @@ public class Player {
     // Memory
     ConcurrentLinkedQueue<InspectionResult> inspections;
 
+    ConcurrentLinkedQueue<Message> playerSpecificMessages;
+
     // Control
     boolean hasActedThisPhase;
 }

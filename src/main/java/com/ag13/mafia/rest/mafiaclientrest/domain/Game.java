@@ -15,6 +15,6 @@ public class Game {
     int dayCount;
     int daysWithoutVillageKill;
     GameResult result;
-    List<String> systemMessages;
+    List<Message> allPlayerMessages;
     int timeRemainingInCurrentPhase;
 }
