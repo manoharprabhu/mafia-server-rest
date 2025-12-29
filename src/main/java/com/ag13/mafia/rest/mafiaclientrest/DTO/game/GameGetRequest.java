@@ -1,4 +1,4 @@
-package com.ag13.mafia.rest.mafiaclientrest.DTO.lobby;
+package com.ag13.mafia.rest.mafiaclientrest.DTO.game;
 
 import lombok.Getter;
 import lombok.Setter;

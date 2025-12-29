@@ -1,4 +1,4 @@
-package com.ag13.mafia.rest.mafiaclientrest.DTO.lobby;
+package com.ag13.mafia.rest.mafiaclientrest.DTO.game;
 
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Role;

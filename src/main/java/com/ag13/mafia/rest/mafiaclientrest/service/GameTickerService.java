@@ -15,13 +15,12 @@ public class GameTickerService {
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     private Runnable task;
 
-    public void start(Game game, GameConfigService gameConfigService) {
+    public void start(Game game) {
         if(this.game != null) {
             log.info("Game is already running");
             return;
         }
         this.game = game;
-        this.game.setGameConfigService(gameConfigService);
         task = this::tick;
         executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
     }

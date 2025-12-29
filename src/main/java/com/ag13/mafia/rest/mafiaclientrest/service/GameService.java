@@ -1,8 +1,10 @@
 package com.ag13.mafia.rest.mafiaclientrest.service;
 
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.GameGetRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.GameGetResponse;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.game.GameGetRequest;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.game.GameGetResponse;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.game.StartGameRequest;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.game.StartGameResponse;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Message;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
@@ -25,6 +27,9 @@ public class GameService {
 
     @Autowired
     GameTickerService gameTickerService;
+
+    @Autowired
+    GameConfigService gameConfigService;
 
     public void addNewPlayerToExistingGame(String playerId, String playerName) {
         var player = new Player();
@@ -71,8 +76,32 @@ public class GameService {
         //game.setPlayerSpecificMessages(new ConcurrentHashMap<>());
 
         this.currentGame = game;
+        this.currentGame.setGameConfigService(gameConfigService);
         this.currentGameHostPlayerId = playerId;
     }
+
+    @SuppressWarnings("unchecked")
+    public HttpResponse<StartGameResponse> startGame(StartGameRequest request) {
+        var lobbyId = request.getLobbyId();
+        var playerId = request.getPlayerId();
+        if(currentGame == null){
+            return (HttpResponse<StartGameResponse>) HttpResponse.createFailureResponse("No game is active right now");
+        }
+
+        if(!currentGame.getPlayers().containsKey(playerId)){
+            return (HttpResponse<StartGameResponse>) HttpResponse.createFailureResponse("Given player ID is not in the active game");
+        }
+
+        if(!Objects.equals(lobbyId, currentGame.getLobbyId())){
+            return (HttpResponse<StartGameResponse>) HttpResponse.createFailureResponse("Given lobby ID is not active");
+        }
+
+        this.currentGame.setCurrentPhase(Phase.START);
+        gameTickerService.start(currentGame);
+
+        return StartGameResponse.create();
+    }
+
     @SuppressWarnings("unchecked")
     public HttpResponse<GameGetResponse> getState(GameGetRequest request) {
         var lobbyId = request.getLobbyId();
