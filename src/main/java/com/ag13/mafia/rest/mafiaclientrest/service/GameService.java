@@ -8,6 +8,7 @@ import com.ag13.mafia.rest.mafiaclientrest.domain.Message;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,6 +22,9 @@ public class GameService {
     private Game currentGame;
     @Getter
     private String currentGameHostPlayerId;
+
+    @Autowired
+    GameTickerService gameTickerService;
 
     public void addNewPlayerToExistingGame(String playerId, String playerName) {
         var player = new Player();

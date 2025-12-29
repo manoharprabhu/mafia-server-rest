@@ -29,4 +29,8 @@ public class Player {
 
     // Control
     boolean hasActedThisPhase;
+
+    public void tick() {
+
+    }
 }
