@@ -5,12 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import tools.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -29,13 +28,85 @@ public class Game {
 
     public void tick() {
         log.info("tick");
+
+        // START -> ASSIGN ROLES
         if(currentPhase.equals(Phase.START)) {
             // assign the roles
             assignRandomRoles();
             log.info(players.values().toString());
             // change game state to start the game
             currentPhase = Phase.NIGHT;
+            timeRemainingInCurrentPhase = gameConfigService.getNightVoteDuration();
+            return;
         }
+
+        // NIGHT VOTING PHASE
+        if(currentPhase.equals(Phase.NIGHT)) {
+            if(timeRemainingInCurrentPhase > 0) {
+                timeRemainingInCurrentPhase--;
+                return;
+            }
+
+            currentPhase = Phase.RESOLVE_NIGHT;
+            return;
+        }
+
+        //RESOLVE_NIGHT -> tally mafia votes, kill the target if they are not protected by doctor
+        if(currentPhase.equals(Phase.RESOLVE_NIGHT)) {
+            var votes = new ArrayList<String>();
+            String doctorProtectedId = null;
+            for(Player player : players.values()) {
+                if(player.getRole().equals(Role.MAFIA) && (player.getNightTargetPlayerId() != null && !player.getNightTargetPlayerId().isEmpty())) {
+                    votes.add(player.getNightTargetPlayerId());
+                }
+
+                if(player.getRole().equals(Role.DOCTOR) && (player.getNightTargetPlayerId() != null && !player.getNightTargetPlayerId().isEmpty())) {
+                    doctorProtectedId = player.getNightTargetPlayerId();
+                }
+            }
+
+            var mostVotedPlayer = findMostVotedPlayer(votes);
+            if(Objects.equals(mostVotedPlayer, doctorProtectedId)) {
+                log.info("Player " + mostVotedPlayer + " is protected and cannot be killed");
+            } else {
+                log.info("Player " + mostVotedPlayer + " has been killed by mafia");
+                players.get(mostVotedPlayer).setAlive(false);
+            }
+
+            resetVotesOfAllPlayers();
+            currentPhase = Phase.DAY_DISCUSSION;
+            timeRemainingInCurrentPhase = gameConfigService.getDayDuration();
+            return;
+        }
+
+        // DAY DISCUSSION PHASE
+        if(currentPhase.equals(Phase.DAY_DISCUSSION)) {
+            if(timeRemainingInCurrentPhase > 0) {
+                timeRemainingInCurrentPhase--;
+                return;
+            }
+
+            currentPhase = Phase.DAY_VOTING;
+            timeRemainingInCurrentPhase = gameConfigService.getDayVoteDuration();
+            return;
+        }
+
+        // DAY VOTING PHASE
+        if(currentPhase.equals(Phase.DAY_VOTING)) {
+            if(timeRemainingInCurrentPhase > 0) {
+                timeRemainingInCurrentPhase--;
+                return;
+            }
+
+            currentPhase = Phase.RESOLVE_DAY;
+            return;
+        }
+
+        // RESOLVE DAY PHASE
+        if(currentPhase.equals(Phase.RESOLVE_DAY)) {
+
+        }
+
         // NIGHT: // night voting phase set time remaining to NIGHT time
         // When countdown reaches 0, tally mafia votes and decide victim
         // check if victim is protected by doctor before killing them
@@ -49,6 +120,31 @@ public class Game {
         // check for win condition -> goto WIN if yes
         // goto NIGHT
     }
+
+    private void resetVotesOfAllPlayers() {
+        for(Player player : players.values()) {
+            player.setNightTargetPlayerId(null);
+            player.setVotedForPlayerId(null);
+        }
+    }
+
+    private String findMostVotedPlayer(List<String> list) {
+        Map<String, Integer> map = new HashMap<>();
+        for (String t : list) {
+            // Puts the element in the map and increments its count
+            map.put(t, map.getOrDefault(t, 0) + 1);
+        }
+
+        Map.Entry<String, Integer> max = null;
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            if (max == null || entry.getValue() > max.getValue()) {
+                max = entry;
+            }
+        }
+
+        return max.getKey();
+    }
+
 
     private void assignRandomRoles() {
         var roles = new ArrayList<Role>(List.of(

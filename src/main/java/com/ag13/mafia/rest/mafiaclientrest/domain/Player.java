@@ -14,7 +14,6 @@ public class Player {
     String name;
     Role role;
     boolean alive;
-    boolean protectedTonight;
     boolean inspectedTonight;
 
     // Voting
@@ -31,8 +30,4 @@ public class Player {
 
     // Control
     boolean hasActedThisPhase;
-
-    public void tick() {
-
-    }
 }
