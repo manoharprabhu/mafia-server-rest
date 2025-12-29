@@ -3,7 +3,9 @@ package com.ag13.mafia.rest.mafiaclientrest.domain;
 import com.ag13.mafia.rest.mafiaclientrest.service.GameConfigService;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 @Setter
 @Slf4j
+@ToString
 public class Game {
     String lobbyId;
     ConcurrentHashMap<String, Player> players;
@@ -26,10 +29,10 @@ public class Game {
 
     public void tick() {
         log.info("tick");
-        log.info(players.toString());
         if(currentPhase.equals(Phase.START)) {
             // assign the roles
             assignRandomRoles();
+            log.info(players.values().toString());
             // change game state to start the game
             currentPhase = Phase.NIGHT;
         }
@@ -56,9 +59,6 @@ public class Game {
         ));
         var remaining = players.size() - 4;
         var mafiaSize = remaining / 2;
-        for(var i = 0; i < mafiaSize; i++) {
-            roles.add(Role.MAFIA);
-        }
         for(var i = 0; i < mafiaSize; i++) {
             roles.add(Role.MAFIA);
         }

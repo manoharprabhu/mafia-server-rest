@@ -2,11 +2,13 @@ package com.ag13.mafia.rest.mafiaclientrest.domain;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
 @Setter
+@ToString
 public class Player {
     String id;
     String name;

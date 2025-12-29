@@ -23,7 +23,7 @@ public class GameController {
     }
 
     @PostMapping(path = "/game/start")
-    public HttpResponse<StartGameResponse> getState(@RequestBody StartGameRequest request) {
+    public HttpResponse<StartGameResponse> startGame(@RequestBody StartGameRequest request) {
         return gameService.startGame(request);
     }
 }
