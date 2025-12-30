@@ -66,7 +66,9 @@ public class Game {
             }
 
             var mostVotedPlayer = findMostVotedPlayer(votes);
-            if(Objects.equals(mostVotedPlayer, doctorProtectedId)) {
+            if(mostVotedPlayer == null) {
+                log.info("Nobody was voted at night");
+            } else if(Objects.equals(mostVotedPlayer, doctorProtectedId)) {
                 log.info("Player " + mostVotedPlayer + " is protected and cannot be killed");
             } else {
                 log.info("Player " + mostVotedPlayer + " has been killed by mafia");
@@ -129,6 +131,9 @@ public class Game {
     }
 
     private String findMostVotedPlayer(List<String> list) {
+        if(list == null || list.isEmpty()) {
+            return null;
+        }
         Map<String, Integer> map = new HashMap<>();
         for (String t : list) {
             // Puts the element in the map and increments its count
