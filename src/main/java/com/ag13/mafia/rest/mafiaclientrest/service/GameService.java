@@ -173,13 +173,13 @@ public class GameService {
         if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA && currentGame.getCurrentPhase() == Phase.NIGHT) {
             for(Player p : currentGame.getPlayers().values()) {
                 if(p.getRole() == Role.MAFIA && p.getNightTargetPlayerId() != null) {
-                    voteMap.put(playerId, p.getNightTargetPlayerId());
+                    voteMap.put(p.getId(), p.getNightTargetPlayerId());
                 }
             }
         } else if(currentGame.getCurrentPhase() == Phase.DAY_VOTING) {
             for(Player p : currentGame.getPlayers().values()) {
                 if(p.getVotedForPlayerId() != null) {
-                    voteMap.put(playerId, p.getVotedForPlayerId());
+                    voteMap.put(p.getId(), p.getVotedForPlayerId());
                 }
             }
         }
@@ -237,6 +237,8 @@ public class GameService {
                 success = handleMafiaVote(playerId, targetPlayerId);
                 break;
         }
+
+        log.info(currentGame.getPlayers().get(playerId).getName() + " voted for " + currentGame.getPlayers().get(targetPlayerId).getName());
 
         return VotePlayerResponse.create(success);
     }
