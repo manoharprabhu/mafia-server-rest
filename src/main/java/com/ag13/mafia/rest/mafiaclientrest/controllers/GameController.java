@@ -1,10 +1,7 @@
 package com.ag13.mafia.rest.mafiaclientrest.controllers;
 
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.GameGetRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.GameGetResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.StartGameRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.StartGameResponse;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.game.*;
 import com.ag13.mafia.rest.mafiaclientrest.service.GameService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +22,10 @@ public class GameController {
     @PostMapping(path = "/game/start")
     public HttpResponse<StartGameResponse> startGame(@RequestBody StartGameRequest request) {
         return gameService.startGame(request);
+    }
+
+    @PostMapping(path = "/game/vote")
+    public HttpResponse<VotePlayerResponse> startGame(@RequestBody VotePlayerRequest request) {
+        return gameService.votePlayer(request);
     }
 }

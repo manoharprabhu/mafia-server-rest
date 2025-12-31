@@ -1,15 +1,10 @@
 package com.ag13.mafia.rest.mafiaclientrest.service;
 
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.GameGetRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.GameGetResponse;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.StartGameRequest;
-import com.ag13.mafia.rest.mafiaclientrest.DTO.game.StartGameResponse;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Message;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Player;
+import com.ag13.mafia.rest.mafiaclientrest.DTO.game.*;
+import com.ag13.mafia.rest.mafiaclientrest.domain.*;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
+@Slf4j
 public class GameService {
     @Getter
     private Game currentGame;
@@ -163,5 +159,93 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    @SuppressWarnings("unchecked")
+    public HttpResponse<VotePlayerResponse> votePlayer(VotePlayerRequest request) {
+        var lobbyId = request.getLobbyId();
+        var playerId = request.getPlayerId();
+        var targetPlayerId = request.getTargetPlayerId();
+        var voteType = request.getType();
+        // check if the player is in the running game
+        if(currentGame == null){
+            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("No game is active right now");
+        }
+
+        if(!currentGame.getPlayers().containsKey(playerId)){
+            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("Given player ID is not in the active game");
+        }
+
+        if(!currentGame.getPlayers().containsKey(targetPlayerId)){
+            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("Given target player ID is not in the active game");
+        }
+
+        if(!Objects.equals(lobbyId, currentGame.getLobbyId())){
+            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("Given lobby ID is not active");
+        }
+
+        if(!Objects.equals(voteType, "villager") && !Objects.equals(voteType, "mafia")){
+            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("vote type must be either villager or mafia");
+        }
+
+        var success = false;
+        switch (voteType){
+            case "villager":
+                success = handleVillagerVote(playerId, targetPlayerId);
+                break;
+            case "mafia":
+                success = handleMafiaVote(playerId, targetPlayerId);
+                break;
+        }
+
+        return VotePlayerResponse.create(success);
+    }
+
+    private boolean handleMafiaVote(String playerId, String targetPlayerId) {
+        if(!currentGame.getCurrentPhase().equals(Phase.NIGHT)) {
+            log.info("Mafia can only vote during NIGHT phase");
+            return false;
+        }
+        if(Objects.equals(targetPlayerId, playerId)) {
+            log.info("Player cannot vote for self");
+            return false;
+        }
+        if(!currentGame.getPlayers().get(playerId).isAlive() || !currentGame.getPlayers().get(targetPlayerId).isAlive()) {
+            log.info("source and target player must be both alive to vote");
+            return false;
+        }
+
+        if(currentGame.getPlayers().get(playerId).getRole() != Role.MAFIA) {
+            log.info("Only mafia can vote at night");
+            return false;
+        }
+
+        if(currentGame.getPlayers().get(targetPlayerId).getRole() == Role.MAFIA) {
+            log.info("Player can only vote for mafia");
+            return false;
+        }
+
+        currentGame.getPlayers().get(playerId).setNightTargetPlayerId(targetPlayerId);
+        return true;
+    }
+
+    private boolean handleVillagerVote(String playerId, String targetPlayerId) {
+        if(!currentGame.getCurrentPhase().equals(Phase.DAY_VOTING)) {
+            log.info("Villager can only vote during DAY_VOTING phase");
+            return false;
+        }
+
+        if(Objects.equals(targetPlayerId, playerId)) {
+            log.info("Player cannot vote for self");
+            return false;
+        }
+
+        if(!currentGame.getPlayers().get(playerId).isAlive() || !currentGame.getPlayers().get(targetPlayerId).isAlive()) {
+            log.info("source and target player must be both alive to vote");
+            return false;
+        }
+
+        currentGame.getPlayers().get(playerId).setVotedForPlayerId(targetPlayerId);
+        return true;
     }
 }

@@ -27,8 +27,6 @@ public class Game {
     GameConfigService gameConfigService;
 
     public void tick() {
-        log.info("tick");
-
         // START -> ASSIGN ROLES
         if(currentPhase.equals(Phase.START)) {
             // assign the roles
@@ -106,7 +104,25 @@ public class Game {
 
         // RESOLVE DAY PHASE
         if(currentPhase.equals(Phase.RESOLVE_DAY)) {
+            var votes = new ArrayList<String>();
+            for(Player player : players.values()) {
+                if((player.getVotedForPlayerId() != null && !player.getVotedForPlayerId().isEmpty())) {
+                    votes.add(player.getVotedForPlayerId());
+                }
+            }
 
+            var mostVotedPlayer = findMostVotedPlayer(votes);
+            if(mostVotedPlayer == null) {
+                log.info("Nobody was voted at day");
+            } else {
+                log.info("Player " + mostVotedPlayer + " has been killed lynched");
+                players.get(mostVotedPlayer).setAlive(false);
+            }
+
+            resetVotesOfAllPlayers();
+            currentPhase = Phase.NIGHT;
+            timeRemainingInCurrentPhase = gameConfigService.getNightVoteDuration();
+            return;
         }
 
         // NIGHT: // night voting phase set time remaining to NIGHT time
