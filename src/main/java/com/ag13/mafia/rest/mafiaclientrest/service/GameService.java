@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -147,7 +148,9 @@ public class GameService {
 
         response.setDayNumber(currentGame.getDayCount());
         response.setTimeRemainingSeconds(currentGame.getTimeRemainingInCurrentPhase());
-        response.setVoteMap(new ConcurrentHashMap<>());
+
+        ConcurrentHashMap<String, String> voteMap = getVoteMap(playerId);
+        response.setVoteMap(voteMap);
 
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
@@ -163,9 +166,30 @@ public class GameService {
         return gameResponse;
     }
 
+    private ConcurrentHashMap<String, String> getVoteMap(String playerId) {
+        // show mafia votes only to mafia players at night
+        // show everyone's votes to everyone at day
+        ConcurrentHashMap<String, String> voteMap = new ConcurrentHashMap<>();
+        if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA && currentGame.getCurrentPhase() == Phase.NIGHT) {
+            for(Player p : currentGame.getPlayers().values()) {
+                if(p.getRole() == Role.MAFIA && p.getNightTargetPlayerId() != null) {
+                    voteMap.put(playerId, p.getNightTargetPlayerId());
+                }
+            }
+        } else if(currentGame.getCurrentPhase() == Phase.DAY_VOTING) {
+            for(Player p : currentGame.getPlayers().values()) {
+                if(p.getVotedForPlayerId() != null) {
+                    voteMap.put(playerId, p.getVotedForPlayerId());
+                }
+            }
+        }
+
+        return voteMap;
+    }
+
     private ConcurrentHashMap<String, Role> getVisibleRolesForPlayer(String playerId) {
         var result = new ConcurrentHashMap<String, Role>();
-        if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA){
+        if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA) {
             // show other mafias
             for(Player p : currentGame.getPlayers().values()){
                 if(p.getRole() == Role.MAFIA) {
