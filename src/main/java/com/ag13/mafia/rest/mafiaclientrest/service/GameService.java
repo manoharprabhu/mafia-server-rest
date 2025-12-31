@@ -141,7 +141,9 @@ public class GameService {
 //            response.getPlayerSpecificMessages().put(key, messages);
 //        }
 
-        response.setVisibleRoles(new ConcurrentHashMap<>());
+        ConcurrentHashMap<String, Role> visibleRoles = getVisibleRolesForPlayer(playerId);
+        response.setVisibleRoles(visibleRoles);
+
 
         response.setDayNumber(currentGame.getDayCount());
         response.setTimeRemainingSeconds(currentGame.getTimeRemainingInCurrentPhase());
@@ -159,6 +161,20 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private ConcurrentHashMap<String, Role> getVisibleRolesForPlayer(String playerId) {
+        var result = new ConcurrentHashMap<String, Role>();
+        if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA){
+            // show other mafias
+            for(Player p : currentGame.getPlayers().values()){
+                if(p.getRole() == Role.MAFIA) {
+                    result.put(p.getId(), p.getRole());
+                }
+            }
+        }
+
+        return result;
     }
 
     @SuppressWarnings("unchecked")
