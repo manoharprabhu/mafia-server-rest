@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -35,6 +36,7 @@ public class Game {
             // change game state to start the game
             currentPhase = Phase.NIGHT;
             timeRemainingInCurrentPhase = gameConfigService.getNightVoteDuration();
+            addAllPlayerMessage("Starting the game with " + players.size() + " players");
             return;
         }
 
@@ -66,11 +68,14 @@ public class Game {
             var mostVotedPlayer = findMostVotedPlayer(votes);
             if(mostVotedPlayer == null) {
                 log.info("Nobody was voted at night");
+                addAllPlayerMessage("Nobody died tonight");
             } else if(Objects.equals(mostVotedPlayer, doctorProtectedId)) {
                 log.info("Player " + mostVotedPlayer + " is protected and cannot be killed");
+                addAllPlayerMessage("Nobody died tonight");
             } else {
                 log.info("Player " + mostVotedPlayer + " has been killed by mafia");
                 players.get(mostVotedPlayer).setAlive(false);
+                addAllPlayerMessage(players.get(mostVotedPlayer).getName() + " has been killed");
             }
 
             resetVotesOfAllPlayers();
@@ -88,6 +93,7 @@ public class Game {
 
             currentPhase = Phase.DAY_VOTING;
             timeRemainingInCurrentPhase = gameConfigService.getDayVoteDuration();
+            addAllPlayerMessage("Get ready to vote. (Alteast " + ((int)Math.ceil((double) getNumberOfPlayersAlive() / 2)) + " votes required)");
             return;
         }
 
@@ -114,8 +120,10 @@ public class Game {
             var mostVotedPlayer = findMostVotedPlayer(votes);
             if(mostVotedPlayer == null) {
                 log.info("Nobody was voted at day");
+                addAllPlayerMessage("Nobody died today");
             } else {
                 log.info("Player " + mostVotedPlayer + " has been killed lynched");
+                addAllPlayerMessage(players.get(mostVotedPlayer).getName() + " has been killed");
                 players.get(mostVotedPlayer).setAlive(false);
             }
 
@@ -137,6 +145,21 @@ public class Game {
         // kill player if majority votes
         // check for win condition -> goto WIN if yes
         // goto NIGHT
+    }
+
+    private int getNumberOfPlayersAlive() {
+        var count = 0;
+        for(Player player : players.values()) {
+            if(player.isAlive()) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private void addAllPlayerMessage(String message) {
+        allPlayerMessages.add(new Message(Instant.now().toEpochMilli(), message));
     }
 
     private void resetVotesOfAllPlayers() {
