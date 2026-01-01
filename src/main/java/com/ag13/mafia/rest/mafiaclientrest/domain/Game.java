@@ -69,13 +69,13 @@ public class Game {
             if(mostVotedPlayer == null) {
                 log.info("Nobody was voted at night");
                 addAllPlayerMessage("Nobody died tonight");
-            } else if(Objects.equals(mostVotedPlayer, doctorProtectedId)) {
+            } else if(Objects.equals(mostVotedPlayer.getKey(), doctorProtectedId)) {
                 log.info("Player " + mostVotedPlayer + " is protected and cannot be killed");
                 addAllPlayerMessage("Nobody died tonight");
             } else {
                 log.info("Player " + mostVotedPlayer + " has been killed by mafia");
-                players.get(mostVotedPlayer).setAlive(false);
-                addAllPlayerMessage(players.get(mostVotedPlayer).getName() + " has been killed");
+                players.get(mostVotedPlayer.getKey()).setAlive(false);
+                addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " has been killed");
             }
 
             resetVotesOfAllPlayers();
@@ -122,9 +122,15 @@ public class Game {
                 log.info("Nobody was voted at day");
                 addAllPlayerMessage("Nobody died today");
             } else {
-                log.info("Player " + mostVotedPlayer + " has been killed lynched");
-                addAllPlayerMessage(players.get(mostVotedPlayer).getName() + " has been killed");
-                players.get(mostVotedPlayer).setAlive(false);
+                var votesRequired = ((int)Math.ceil((double) getNumberOfPlayersAlive() / 2));
+                if(mostVotedPlayer.getValue() >= votesRequired) {
+                    log.info("Player " + mostVotedPlayer + " has been killed lynched");
+                    addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " has been killed");
+                    players.get(mostVotedPlayer.getKey()).setAlive(false);
+                } else {
+                    log.info("Not enough votes to lynch " + mostVotedPlayer);
+                    addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " could not be killed due to only " + mostVotedPlayer.getValue() + " / " + votesRequired + " votes");
+                }
             }
 
             resetVotesOfAllPlayers();
@@ -169,7 +175,7 @@ public class Game {
         }
     }
 
-    private String findMostVotedPlayer(List<String> list) {
+    private Map.Entry<String, Integer> findMostVotedPlayer(List<String> list) {
         if(list == null || list.isEmpty()) {
             return null;
         }
@@ -186,7 +192,7 @@ public class Game {
             }
         }
 
-        return max.getKey();
+        return max;
     }
 
 
