@@ -36,6 +36,10 @@ public class GameTickerService {
     }
 
     private void tick() {
-        this.game.tick();
+        try {
+            this.game.tick();
+        } catch (Exception ex) {
+            log.error("Game ticking failed", ex);
+        }
     }
 }

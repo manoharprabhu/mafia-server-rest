@@ -70,6 +70,7 @@ public class GameService {
         game.setCurrentPhase(Phase.WAITING_FOR_PLAYERS);
         game.setDaysWithoutVillageKill(0);
         game.setAllPlayerMessages(new ArrayList<>());
+        game.setResult(GameResult.NONE);
         // todo set this from the Player object
         //game.setPlayerSpecificMessages(new ConcurrentHashMap<>());
 
@@ -127,7 +128,6 @@ public class GameService {
         for(Player p : currentGame.getPlayers().values()) {
             response.getPlayers().add(GameGetResponse.Player.create(p));
         }
-        response.setGameResult(currentGame.getResult() != null ? currentGame.getResult().name() : null);
         response.setPhase(currentGame.getCurrentPhase());
 
         response.setMessages(new ArrayList<>());
@@ -157,6 +157,7 @@ public class GameService {
         response.setInspectionResults(inspectionResults);
 
         response.setYourHeadhunterTarget(getMyHeadhunterTarget(playerId));
+        response.setWinner(getWinner());
 
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
@@ -170,6 +171,10 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private GameResult getWinner() {
+        return currentGame.getResult();
     }
 
     private String getMyHeadhunterTarget(String playerId) {

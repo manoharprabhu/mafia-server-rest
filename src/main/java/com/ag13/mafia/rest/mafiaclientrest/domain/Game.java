@@ -28,6 +28,9 @@ public class Game {
     GameConfigService gameConfigService;
 
     public void tick() {
+        if(currentPhase == Phase.WIN) {
+            return;
+        }
         // START -> ASSIGN ROLES
         if(currentPhase.equals(Phase.START)) {
             // assign the roles
@@ -90,6 +93,9 @@ public class Game {
                 log.info("Player " + mostVotedPlayers + " has been killed by mafia");
                 players.get(mostVotedPlayers.getFirst().getKey()).setAlive(false);
                 addAllPlayerMessage(players.get(mostVotedPlayers.getFirst().getKey()).getName() + " has been killed");
+                if(evaluateWinConditions(null)) {
+                    return;
+                }
             }
 
             resetVotesOfAllPlayers();
@@ -145,6 +151,9 @@ public class Game {
                     daysWithoutVillageKill = 0;
                     addAllPlayerMessage(players.get(mostVotedPlayer.getFirst().getKey()).getName() + " has been killed");
                     players.get(mostVotedPlayer.getFirst().getKey()).setAlive(false);
+                    if(evaluateWinConditions(mostVotedPlayer.getFirst().getKey())) {
+                        return;
+                    }
                 } else if(firstPlayerVotes >= votesRequired) {
                     log.info("Tie in votes. Nobody has been killed");
                     addAllPlayerMessage("Tie in votes. Nobody has been killed");
@@ -212,6 +221,52 @@ public class Game {
                 .stream()
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
                 .toList();
+    }
+
+    private boolean evaluateWinConditions(String lynchedPlayerId) {
+        var mafiaCount = players.values().stream().filter(p -> p.isAlive() && p.getRole() == Role.MAFIA).count();
+        var nonMafiaCount = players.values().stream().filter(p -> p.isAlive() && p.getRole() != Role.MAFIA).count();
+
+        if (mafiaCount == 0) {
+            // villagers wins, stop the game
+            currentPhase = Phase.WIN;
+            result = GameResult.VILLAGERS_WIN;
+            addAllPlayerMessage("Villagers win");
+            return true;
+        }
+
+        // lynched player is fool -> fool wins
+        if (lynchedPlayerId != null && players.get(lynchedPlayerId) != null && players.get(lynchedPlayerId).getRole() == Role.FOOL) {
+            // lynchedPlayerId wins, stop the game
+            currentPhase = Phase.WIN;
+            result = GameResult.FOOL_WIN;
+            addAllPlayerMessage("Fool wins");
+            return true;
+        }
+
+        var headhunterWithTarget = players.values()
+                .stream()
+                .filter(p -> p.isAlive() && p.getRole() == Role.HEADHUNTER)
+                .filter(p -> Objects.equals(p.getHeadhunterTargetPlayerId(), lynchedPlayerId)).toList();
+        if (!headhunterWithTarget.isEmpty()) {
+            // lynched player is hh target -> hh wins
+            // hh wins, stop the game
+            currentPhase = Phase.WIN;
+            result = GameResult.HEADHUNTER_WIN;
+            addAllPlayerMessage("Headhunter wins");
+            return true;
+        }
+
+
+        if (mafiaCount >= nonMafiaCount) {
+            // number of mafia >= villagers -> mafia wins, stop the game
+            currentPhase = Phase.WIN;
+            result = GameResult.MAFIA_WIN;
+            addAllPlayerMessage("Mafia wins");
+            return true;
+        }
+
+        return false;
     }
 
 

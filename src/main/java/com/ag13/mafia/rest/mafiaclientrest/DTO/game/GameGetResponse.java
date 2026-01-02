@@ -1,9 +1,6 @@
 package com.ag13.mafia.rest.mafiaclientrest.DTO.game;
 
-import com.ag13.mafia.rest.mafiaclientrest.domain.InspectionResult;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
-import com.ag13.mafia.rest.mafiaclientrest.domain.Role;
-import com.ag13.mafia.rest.mafiaclientrest.domain.RoleOrientation;
+import com.ag13.mafia.rest.mafiaclientrest.domain.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -48,11 +45,11 @@ public class GameGetResponse {
     private You you;
     private List<Player> players;
     private List<Message> messages;
-    private String gameResult;
     private Map<String, String> voteMap;
     private Map<String, Role> visibleRoles;
     private List<InspectionResult>  inspectionResults;
     private String yourHeadhunterTarget;
+    private GameResult winner;
 
     @Getter
     @Setter

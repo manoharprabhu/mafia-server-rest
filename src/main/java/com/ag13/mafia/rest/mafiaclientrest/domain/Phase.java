@@ -8,4 +8,5 @@ public enum Phase {
     DAY_DISCUSSION,
     DAY_VOTING,
     RESOLVE_DAY,
+    WIN
 }
