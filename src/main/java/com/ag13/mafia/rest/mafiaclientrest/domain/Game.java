@@ -71,7 +71,7 @@ public class Game {
                 addAllPlayerMessage("Nobody died tonight");
             } else if(Objects.equals(mostVotedPlayer.getKey(), doctorProtectedId)) {
                 log.info("Player " + mostVotedPlayer + " is protected and cannot be killed");
-                addAllPlayerMessage("Nobody died tonight");
+                addAllPlayerMessage("Doctor has protected someone from dying");
             } else {
                 log.info("Player " + mostVotedPlayer + " has been killed by mafia");
                 players.get(mostVotedPlayer.getKey()).setAlive(false);
@@ -123,6 +123,7 @@ public class Game {
                 addAllPlayerMessage("Nobody died today");
             } else {
                 var votesRequired = ((int)Math.ceil((double) getNumberOfPlayersAlive() / 2));
+                //todo - if more than 1 player receive same number of votes, nobody dies
                 if(mostVotedPlayer.getValue() >= votesRequired) {
                     log.info("Player " + mostVotedPlayer + " has been killed lynched");
                     addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " has been killed");

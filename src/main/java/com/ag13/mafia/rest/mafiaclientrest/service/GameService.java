@@ -169,12 +169,17 @@ public class GameService {
     private ConcurrentHashMap<String, String> getVoteMap(String playerId) {
         // show mafia votes only to mafia players at night
         // show everyone's votes to everyone at day
+        // show doctor vote only to doctor
         ConcurrentHashMap<String, String> voteMap = new ConcurrentHashMap<>();
         if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA && currentGame.getCurrentPhase() == Phase.NIGHT) {
             for(Player p : currentGame.getPlayers().values()) {
                 if(p.getRole() == Role.MAFIA && p.getNightTargetPlayerId() != null) {
                     voteMap.put(p.getId(), p.getNightTargetPlayerId());
                 }
+            }
+        } else if(currentGame.getPlayers().get(playerId).getRole() == Role.DOCTOR && currentGame.getCurrentPhase() == Phase.NIGHT) {
+            if(currentGame.getPlayers().get(playerId).getNightTargetPlayerId() != null) {
+                voteMap.put(playerId, currentGame.getPlayers().get(playerId).getNightTargetPlayerId());
             }
         } else if(currentGame.getCurrentPhase() == Phase.DAY_VOTING) {
             for(Player p : currentGame.getPlayers().values()) {
@@ -224,8 +229,8 @@ public class GameService {
             return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("Given lobby ID is not active");
         }
 
-        if(!Objects.equals(voteType, "villager") && !Objects.equals(voteType, "mafia")){
-            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("vote type must be either villager or mafia");
+        if(!Objects.equals(voteType, "villager") && !Objects.equals(voteType, "mafia") && !Objects.equals(voteType, "doctor")) {
+            return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("vote type must be either villager or mafia or doctor");
         }
 
         var success = false;
@@ -236,11 +241,37 @@ public class GameService {
             case "mafia":
                 success = handleMafiaVote(playerId, targetPlayerId);
                 break;
+            case "doctor":
+                success = handleDoctorVote(playerId, targetPlayerId);
+                break;
         }
 
         log.info(currentGame.getPlayers().get(playerId).getName() + " voted for " + currentGame.getPlayers().get(targetPlayerId).getName());
 
         return VotePlayerResponse.create(success);
+    }
+
+    private boolean handleDoctorVote(String playerId, String targetPlayerId) {
+        if(!currentGame.getCurrentPhase().equals(Phase.NIGHT)) {
+            log.info("Doctor can only vote during NIGHT phase");
+            return false;
+        }
+        if(Objects.equals(targetPlayerId, playerId)) {
+            log.info("Player cannot vote for self");
+            return false;
+        }
+        if(!currentGame.getPlayers().get(playerId).isAlive() || !currentGame.getPlayers().get(targetPlayerId).isAlive()) {
+            log.info("source and target player must be both alive to vote");
+            return false;
+        }
+
+        if(currentGame.getPlayers().get(playerId).getRole() != Role.DOCTOR) {
+            log.info("Only doctor can protect at night");
+            return false;
+        }
+
+        currentGame.getPlayers().get(playerId).setNightTargetPlayerId(targetPlayerId);
+        return true;
     }
 
     private boolean handleMafiaVote(String playerId, String targetPlayerId) {
