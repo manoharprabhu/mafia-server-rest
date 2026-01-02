@@ -28,4 +28,9 @@ public class GameController {
     public HttpResponse<VotePlayerResponse> startGame(@RequestBody VotePlayerRequest request) {
         return gameService.votePlayer(request);
     }
+
+    @PostMapping(path = "/game/police/inspect")
+    public HttpResponse<GamePoliceInspectResponse> policeInspect(@RequestBody GamePoliceInspectRequest request) {
+        return gameService.policeInspectPlayer(request);
+    }
 }

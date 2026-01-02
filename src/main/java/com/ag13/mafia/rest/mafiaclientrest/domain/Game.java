@@ -32,6 +32,20 @@ public class Game {
         if(currentPhase.equals(Phase.START)) {
             // assign the roles
             assignRandomRoles();
+//            var it = 1000;
+//            var flag = false;
+//            while(it-- > 0) {
+//                assignRandomRoles();
+//                for(var p : players.values()) {
+//                    if(p.getName().equals("M") && p.getRole() == Role.POLICE) {
+//                        flag = true;
+//                        break;
+//                    }
+//                }
+//                if(flag) {
+//                    break;
+//                }
+//            }
             log.info(players.values().toString());
             // change game state to start the game
             currentPhase = Phase.NIGHT;
@@ -120,21 +134,25 @@ public class Game {
             var mostVotedPlayer = findMostVotedPlayer(votes);
             if(mostVotedPlayer == null) {
                 log.info("Nobody was voted at day");
+                daysWithoutVillageKill++;
                 addAllPlayerMessage("Nobody died today");
             } else {
                 var votesRequired = ((int)Math.ceil((double) getNumberOfPlayersAlive() / 2));
                 //todo - if more than 1 player receive same number of votes, nobody dies
                 if(mostVotedPlayer.getValue() >= votesRequired) {
                     log.info("Player " + mostVotedPlayer + " has been killed lynched");
+                    daysWithoutVillageKill = 0;
                     addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " has been killed");
                     players.get(mostVotedPlayer.getKey()).setAlive(false);
                 } else {
                     log.info("Not enough votes to lynch " + mostVotedPlayer);
+                    daysWithoutVillageKill++;
                     addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " could not be killed due to only " + mostVotedPlayer.getValue() + " / " + votesRequired + " votes");
                 }
             }
 
             resetVotesOfAllPlayers();
+            dayCount++;
             currentPhase = Phase.NIGHT;
             timeRemainingInCurrentPhase = gameConfigService.getNightVoteDuration();
             return;
@@ -173,6 +191,7 @@ public class Game {
         for(Player player : players.values()) {
             player.setNightTargetPlayerId(null);
             player.setVotedForPlayerId(null);
+            player.setInspectedTonight(false);
         }
     }
 

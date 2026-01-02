@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -65,7 +66,7 @@ public class GameService {
         game.setLobbyId(lobbyId);
         game.setResult(null);
         game.setPlayers(playersMap);
-        game.setDayCount(0);
+        game.setDayCount(1);
         game.setCurrentPhase(Phase.WAITING_FOR_PLAYERS);
         game.setDaysWithoutVillageKill(0);
         game.setAllPlayerMessages(new ArrayList<>());
@@ -152,6 +153,9 @@ public class GameService {
         ConcurrentHashMap<String, String> voteMap = getVoteMap(playerId);
         response.setVoteMap(voteMap);
 
+        List<InspectionResult> inspectionResults = getInspectionResults(playerId);
+        response.setInspectionResults(inspectionResults);
+
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
         you.setName(player.getName());
@@ -164,6 +168,15 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private List<InspectionResult> getInspectionResults(String playerId) {
+        var result = new ArrayList<InspectionResult>();
+        if(currentGame.getPlayers().get(playerId).getRole() != Role.POLICE){
+            return result;
+        }
+
+        return new ArrayList<>(currentGame.getPlayers().get(playerId).getInspections());
     }
 
     private ConcurrentHashMap<String, String> getVoteMap(String playerId) {
@@ -320,5 +333,72 @@ public class GameService {
 
         currentGame.getPlayers().get(playerId).setVotedForPlayerId(targetPlayerId);
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    public HttpResponse<GamePoliceInspectResponse> policeInspectPlayer(GamePoliceInspectRequest request) {
+        var lobbyId = request.getLobbyId();
+        var playerId = request.getPlayerId();
+        var targetPlayerId = request.getTargetPlayerId();
+
+        if(currentGame == null){
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("No game is active right now");
+        }
+
+        if(!currentGame.getPlayers().containsKey(playerId)){
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("Given player ID is not in the active game");
+        }
+
+        if(!currentGame.getPlayers().containsKey(targetPlayerId)){
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("Given target player ID is not in the active game");
+        }
+
+        if(!Objects.equals(lobbyId, currentGame.getLobbyId())){
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("Given lobby ID is not active");
+        }
+
+        if(currentGame.getPlayers().get(playerId).getRole() != Role.POLICE){
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("Only police can use this API");
+        }
+
+        if(!currentGame.getPlayers().get(playerId).isAlive() || !currentGame.getPlayers().get(targetPlayerId).isAlive()){
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("source and target must be alive to use this API");
+        }
+
+        var playerData  = currentGame.getPlayers().get(playerId);
+        if(playerData.isInspectedTonight()) {
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("Player has already used the inspection ability tonight");
+        }
+
+        var hasInspectedTargetAlready = false;
+        for(var inspections: playerData.getInspections()) {
+            if(inspections.getPlayerId().equals(targetPlayerId)) {
+                hasInspectedTargetAlready = true;
+                break;
+            }
+        }
+
+        if(hasInspectedTargetAlready) {
+            return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("Target player has already been inspected before");
+        }
+
+        var targetPlayer = currentGame.getPlayers().get(targetPlayerId);
+        var inspection = new InspectionResult();
+
+        if(targetPlayer.getRole() == Role.POLICE || targetPlayer.getRole() == Role.DOCTOR || targetPlayer.getRole() == Role.VILLAGER) {
+            inspection.setPlayerId(targetPlayerId);
+            inspection.setRoleOrientation(RoleOrientation.GOOD);
+        } else if(targetPlayer.getRole() == Role.MAFIA) {
+            inspection.setPlayerId(targetPlayerId);
+            inspection.setRoleOrientation(RoleOrientation.BAD);
+        } else if(targetPlayer.getRole() == Role.HEADHUNTER ||  targetPlayer.getRole() == Role.FOOL) {
+            inspection.setPlayerId(targetPlayerId);
+            inspection.setRoleOrientation(RoleOrientation.UNKNOWN);
+        }
+
+        playerData.getInspections().add(inspection);
+        playerData.setInspectedTonight(true);
+
+        return GamePoliceInspectResponse.create(true);
     }
 }
