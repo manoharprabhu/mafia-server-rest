@@ -52,6 +52,7 @@ public class GameGetResponse {
     private Map<String, String> voteMap;
     private Map<String, Role> visibleRoles;
     private List<InspectionResult>  inspectionResults;
+    private String yourHeadhunterTarget;
 
     @Getter
     @Setter

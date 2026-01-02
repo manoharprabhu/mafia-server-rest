@@ -156,6 +156,8 @@ public class GameService {
         List<InspectionResult> inspectionResults = getInspectionResults(playerId);
         response.setInspectionResults(inspectionResults);
 
+        response.setYourHeadhunterTarget(getMyHeadhunterTarget(playerId));
+
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
         you.setName(player.getName());
@@ -168,6 +170,15 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private String getMyHeadhunterTarget(String playerId) {
+        var player = currentGame.getPlayers().get(playerId);
+        if(player.getRole() != Role.HEADHUNTER) {
+            return null;
+        }
+
+        return player.getHeadhunterTargetPlayerId();
     }
 
     private List<InspectionResult> getInspectionResults(String playerId) {

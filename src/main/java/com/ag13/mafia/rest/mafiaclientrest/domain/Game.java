@@ -37,7 +37,7 @@ public class Game {
 //            while(it-- > 0) {
 //                assignRandomRoles();
 //                for(var p : players.values()) {
-//                    if(p.getName().equals("M") && p.getRole() == Role.POLICE) {
+//                    if(p.getName().equals("M") && p.getRole() == Role.HEADHUNTER) {
 //                        flag = true;
 //                        break;
 //                    }
@@ -107,7 +107,7 @@ public class Game {
 
             currentPhase = Phase.DAY_VOTING;
             timeRemainingInCurrentPhase = gameConfigService.getDayVoteDuration();
-            addAllPlayerMessage("Get ready to vote. (Alteast " + ((int)Math.ceil((double) getNumberOfPlayersAlive() / 2)) + " votes required)");
+            addAllPlayerMessage("Get ready to vote. (Alteast " + ((int)Math.floor((double) getNumberOfPlayersAlive() / 2)) + " votes required)");
             return;
         }
 
@@ -137,7 +137,7 @@ public class Game {
                 daysWithoutVillageKill++;
                 addAllPlayerMessage("Nobody died today");
             } else {
-                var votesRequired = ((int)Math.ceil((double) getNumberOfPlayersAlive() / 2));
+                var votesRequired = ((int)Math.floor((double) getNumberOfPlayersAlive() / 2));
                 //todo - if more than 1 player receive same number of votes, nobody dies
                 if(mostVotedPlayer.getValue() >= votesRequired) {
                     log.info("Player " + mostVotedPlayer + " has been killed lynched");
@@ -236,6 +236,22 @@ public class Game {
         var index = 0;
         for(var key : players.keySet()) {
             players.get(key).setRole(roles.get(index++));
+        }
+
+        for(var key : players.keySet()) {
+           if(players.get(key).getRole() == Role.HEADHUNTER) {
+               var iteration = 100;
+               var hhPlayer = players.get(key);
+               while(iteration-- > 0) {
+                   var list = new ArrayList<>(players.values());
+                   var i = ((int)(Math.random() * 100)) % players.size();
+                   if(list.get(i).getRole() == Role.VILLAGER || list.get(i).getRole() == Role.POLICE || list.get(i).getRole() == Role.DOCTOR) {
+                       hhPlayer.setHeadhunterTargetPlayerId(list.get(i).id);
+                       // WARNING -->>>> Logic exits here. remove this before adding further logic
+                       return;
+                   }
+               }
+           }
         }
     }
 }
