@@ -79,17 +79,17 @@ public class Game {
                 }
             }
 
-            var mostVotedPlayer = findMostVotedPlayer(votes);
-            if(mostVotedPlayer == null) {
+            var mostVotedPlayers = findMostVotedPlayer(votes);
+            if(mostVotedPlayers == null || mostVotedPlayers.isEmpty()) {
                 log.info("Nobody was voted at night");
                 addAllPlayerMessage("Nobody died tonight");
-            } else if(Objects.equals(mostVotedPlayer.getKey(), doctorProtectedId)) {
-                log.info("Player " + mostVotedPlayer + " is protected and cannot be killed");
+            } else if(Objects.equals(mostVotedPlayers.getFirst().getKey(), doctorProtectedId)) {
+                log.info("Player " + mostVotedPlayers + " is protected and cannot be killed");
                 addAllPlayerMessage("Doctor has protected someone from dying");
             } else {
-                log.info("Player " + mostVotedPlayer + " has been killed by mafia");
-                players.get(mostVotedPlayer.getKey()).setAlive(false);
-                addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " has been killed");
+                log.info("Player " + mostVotedPlayers + " has been killed by mafia");
+                players.get(mostVotedPlayers.getFirst().getKey()).setAlive(false);
+                addAllPlayerMessage(players.get(mostVotedPlayers.getFirst().getKey()).getName() + " has been killed");
             }
 
             resetVotesOfAllPlayers();
@@ -132,22 +132,26 @@ public class Game {
             }
 
             var mostVotedPlayer = findMostVotedPlayer(votes);
-            if(mostVotedPlayer == null) {
+            if(mostVotedPlayer == null || mostVotedPlayer.isEmpty()) {
                 log.info("Nobody was voted at day");
                 daysWithoutVillageKill++;
                 addAllPlayerMessage("Nobody died today");
             } else {
+                int firstPlayerVotes = mostVotedPlayer.getFirst().getValue();
+                int secondPlayerVotes = mostVotedPlayer.size() >= 2 ? mostVotedPlayer.get(1).getValue() : 0;
                 var votesRequired = ((int)Math.floor((double) getNumberOfPlayersAlive() / 2));
-                //todo - if more than 1 player receive same number of votes, nobody dies
-                if(mostVotedPlayer.getValue() >= votesRequired) {
+                if(firstPlayerVotes >= votesRequired && firstPlayerVotes != secondPlayerVotes) {
                     log.info("Player " + mostVotedPlayer + " has been killed lynched");
                     daysWithoutVillageKill = 0;
-                    addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " has been killed");
-                    players.get(mostVotedPlayer.getKey()).setAlive(false);
+                    addAllPlayerMessage(players.get(mostVotedPlayer.getFirst().getKey()).getName() + " has been killed");
+                    players.get(mostVotedPlayer.getFirst().getKey()).setAlive(false);
+                } else if(firstPlayerVotes >= votesRequired) {
+                    log.info("Tie in votes. Nobody has been killed");
+                    addAllPlayerMessage("Tie in votes. Nobody has been killed");
                 } else {
                     log.info("Not enough votes to lynch " + mostVotedPlayer);
                     daysWithoutVillageKill++;
-                    addAllPlayerMessage(players.get(mostVotedPlayer.getKey()).getName() + " could not be killed due to only " + mostVotedPlayer.getValue() + " / " + votesRequired + " votes");
+                    addAllPlayerMessage(players.get(mostVotedPlayer.getFirst().getKey()).getName() + " could not be killed due to only " + mostVotedPlayer.getFirst().getValue() + " / " + votesRequired + " votes");
                 }
             }
 
@@ -195,24 +199,19 @@ public class Game {
         }
     }
 
-    private Map.Entry<String, Integer> findMostVotedPlayer(List<String> list) {
+    private List<Map.Entry<String, Integer>> findMostVotedPlayer(List<String> list) {
         if(list == null || list.isEmpty()) {
             return null;
         }
         Map<String, Integer> map = new HashMap<>();
         for (String t : list) {
-            // Puts the element in the map and increments its count
             map.put(t, map.getOrDefault(t, 0) + 1);
         }
 
-        Map.Entry<String, Integer> max = null;
-        for (Map.Entry<String, Integer> entry : map.entrySet()) {
-            if (max == null || entry.getValue() > max.getValue()) {
-                max = entry;
-            }
-        }
-
-        return max;
+        return map.entrySet()
+                .stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+                .toList();
     }
 
 
