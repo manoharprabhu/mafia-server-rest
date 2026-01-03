@@ -223,15 +223,29 @@ public class GameService {
 
     private ConcurrentHashMap<String, Role> getVisibleRolesForPlayer(String playerId) {
         var result = new ConcurrentHashMap<String, Role>();
+        if(currentGame.getCurrentPhase() == Phase.WIN) {
+            for(Player p : currentGame.getPlayers().values()){
+                result.put(p.getId(), p.getRole());
+            }
+            return result;
+        }
+
         if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA) {
             // show other mafias
             for(Player p : currentGame.getPlayers().values()){
-                if(p.getRole() == Role.MAFIA) {
+                if(p.getRole() == Role.MAFIA || !p.isAlive()) {
                     result.put(p.getId(), p.getRole());
                 }
             }
+            return result;
         }
 
+        // return dead people's role by default
+        for(Player p : currentGame.getPlayers().values()){
+            if(!p.isAlive()) {
+                result.put(p.getId(), p.getRole());
+            }
+        }
         return result;
     }
 

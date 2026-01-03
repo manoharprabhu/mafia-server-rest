@@ -29,6 +29,7 @@ public class Game {
 
     public void tick() {
         if(currentPhase == Phase.WIN) {
+
             return;
         }
         // START -> ASSIGN ROLES
