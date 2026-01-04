@@ -5,6 +5,7 @@ import com.ag13.mafia.rest.mafiaclientrest.DTO.game.*;
 import com.ag13.mafia.rest.mafiaclientrest.domain.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -159,6 +160,8 @@ public class GameService {
         response.setYourHeadhunterTarget(getMyHeadhunterTarget(playerId));
         response.setWinner(getWinner());
 
+        response.setHasInspectedAlready(hasPoliceAlreadyInspected(playerId));
+
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
         you.setName(player.getName());
@@ -171,6 +174,15 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private boolean hasPoliceAlreadyInspected(String playerId) {
+        var player = currentGame.getPlayers().get(playerId);
+        if(player.getRole() == Role.POLICE){
+            return player.isInspectedTonight();
+        } else {
+            return false;
+        }
     }
 
     private GameResult getWinner() {
@@ -413,6 +425,15 @@ public class GameService {
         }
 
         var targetPlayer = currentGame.getPlayers().get(targetPlayerId);
+        var inspection = getInspectionResult(targetPlayer, targetPlayerId);
+
+        playerData.getInspections().add(inspection);
+        playerData.setInspectedTonight(true);
+
+        return GamePoliceInspectResponse.create(true);
+    }
+
+    private static @NonNull InspectionResult getInspectionResult(Player targetPlayer, String targetPlayerId) {
         var inspection = new InspectionResult();
 
         if(targetPlayer.getRole() == Role.POLICE || targetPlayer.getRole() == Role.DOCTOR || targetPlayer.getRole() == Role.VILLAGER) {
@@ -425,10 +446,6 @@ public class GameService {
             inspection.setPlayerId(targetPlayerId);
             inspection.setRoleOrientation(RoleOrientation.UNKNOWN);
         }
-
-        playerData.getInspections().add(inspection);
-        playerData.setInspectedTonight(true);
-
-        return GamePoliceInspectResponse.create(true);
+        return inspection;
     }
 }

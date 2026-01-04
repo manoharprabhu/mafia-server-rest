@@ -50,6 +50,7 @@ public class GameGetResponse {
     private List<InspectionResult>  inspectionResults;
     private String yourHeadhunterTarget;
     private GameResult winner;
+    private boolean hasInspectedAlready;
 
     @Getter
     @Setter
