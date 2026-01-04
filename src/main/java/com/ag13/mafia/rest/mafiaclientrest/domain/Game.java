@@ -274,11 +274,18 @@ public class Game {
     private void assignRandomRoles() {
         var roles = new ArrayList<Role>(List.of(
                 Role.POLICE,
-                Role.FOOL,
-                Role.HEADHUNTER,
                 Role.DOCTOR
         ));
-        var remaining = players.size() - 4;
+
+        if(gameConfigService.isFoolEnabled()) {
+            roles.add(Role.FOOL);
+        }
+
+        if(gameConfigService.isHeadhunterEnabled()) {
+            roles.add(Role.HEADHUNTER);
+        }
+
+        var remaining = players.size() - roles.size();
         var mafiaSize = remaining / 2;
         for(var i = 0; i < mafiaSize; i++) {
             roles.add(Role.MAFIA);
