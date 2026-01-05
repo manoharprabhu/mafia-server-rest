@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,7 @@ public class Game {
     int dayCount;
     int daysWithoutVillageKill;
     GameResult result;
-    List<Message> allPlayerMessages;
+    ConcurrentLinkedQueue<Message> allPlayerMessages;
     int timeRemainingInCurrentPhase;
     GameConfigService gameConfigService;
 
@@ -198,7 +199,7 @@ public class Game {
     }
 
     private void addAllPlayerMessage(String message) {
-        allPlayerMessages.add(new Message(Instant.now().toEpochMilli(), message));
+        allPlayerMessages.add(new Message(0, Instant.now().toEpochMilli(), message));
     }
 
     private void resetVotesOfAllPlayers() {

@@ -84,11 +84,13 @@ public class GameGetResponse {
     public static class Message {
         private long timestamp;
         private String message;
+        private int type;
 
         public static Message create(com.ag13.mafia.rest.mafiaclientrest.domain.Message m) {
             var result = new Message();
             result.setMessage(m.getMessage());
             result.setTimestamp(m.getTimestamp());
+            result.setType(m.getType());
             return result;
         }
 

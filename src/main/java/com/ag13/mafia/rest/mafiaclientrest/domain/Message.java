@@ -10,6 +10,7 @@ import lombok.ToString;
 @ToString
 @RequiredArgsConstructor
 public class Message {
+    private final int type;
     private final long timestamp;
     private final String message;
 }

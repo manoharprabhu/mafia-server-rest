@@ -33,4 +33,9 @@ public class GameController {
     public HttpResponse<GamePoliceInspectResponse> policeInspect(@RequestBody GamePoliceInspectRequest request) {
         return gameService.policeInspectPlayer(request);
     }
+
+    @PostMapping(path = "/game/chat")
+    public HttpResponse<Void> chat(@RequestBody ChatRequest request) {
+        return gameService.chat(request);
+    }
 }

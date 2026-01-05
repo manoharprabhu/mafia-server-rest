@@ -9,6 +9,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +71,7 @@ public class GameService {
         game.setDayCount(1);
         game.setCurrentPhase(Phase.WAITING_FOR_PLAYERS);
         game.setDaysWithoutVillageKill(0);
-        game.setAllPlayerMessages(new ArrayList<>());
+        game.setAllPlayerMessages(new ConcurrentLinkedQueue<>());
         game.setResult(GameResult.NONE);
         // todo set this from the Player object
         //game.setPlayerSpecificMessages(new ConcurrentHashMap<>());
@@ -447,5 +448,35 @@ public class GameService {
             inspection.setRoleOrientation(RoleOrientation.UNKNOWN);
         }
         return inspection;
+    }
+
+    @SuppressWarnings("unchecked")
+    public HttpResponse<Void> chat(ChatRequest request) {
+        var lobbyId = request.getLobbyId();
+        var playerId = request.getPlayerId();
+        var message = request.getMessage();
+
+        if(message == null || message.isEmpty()){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Empty message");
+        }
+
+        if(message.length() > gameConfigService.getMaxUserMessageLength()) {
+            message = message.substring(0, gameConfigService.getMaxUserMessageLength()) + "...";
+        }
+
+        if(currentGame == null){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("No game is active right now");
+        }
+
+        if(!currentGame.getPlayers().containsKey(playerId)){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Given player ID is not in the active game");
+        }
+
+        if(!Objects.equals(lobbyId, currentGame.getLobbyId())){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Given lobby ID is not active");
+        }
+        var player = currentGame.getPlayers().get(playerId);
+        currentGame.getAllPlayerMessages().add(new Message(1, Instant.now().toEpochMilli(), player.getName() + ": " + message));
+        return new HttpResponse<>();
     }
 }
