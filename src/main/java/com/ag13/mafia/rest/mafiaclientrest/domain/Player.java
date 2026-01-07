@@ -30,4 +30,6 @@ public class Player {
 
     // Control
     boolean hasActedThisPhase;
+
+    boolean hasVotedToSkipPhase;
 }

@@ -25,11 +25,14 @@ public class GameService {
     @Getter
     private String currentGameHostPlayerId;
 
-    @Autowired
-    GameTickerService gameTickerService;
+    final GameTickerService gameTickerService;
 
-    @Autowired
-    GameConfigService gameConfigService;
+    final GameConfigService gameConfigService;
+
+    public GameService(GameTickerService gameTickerService, GameConfigService gameConfigService) {
+        this.gameTickerService = gameTickerService;
+        this.gameConfigService = gameConfigService;
+    }
 
     public void addNewPlayerToExistingGame(String playerId, String playerName) {
         var player = new Player();
@@ -162,12 +165,14 @@ public class GameService {
         response.setWinner(getWinner());
 
         response.setHasInspectedAlready(hasPoliceAlreadyInspected(playerId));
+        response.setNumberOfPlayersSkipDiscussion(getNumberOfPlayersWhoSkippedDiscussion());
 
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
         you.setName(player.getName());
         you.setRole(playerRole);
         you.setPlayerId(playerId);
+        you.setHasSkippedDiscussion(player.isHasVotedToSkipPhase());
         response.setYou(you);
 
         HttpResponse<GameGetResponse> gameResponse = new HttpResponse<>();
@@ -175,6 +180,15 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private int getNumberOfPlayersWhoSkippedDiscussion() {
+        var count = 0;
+        for(Player player : currentGame.getPlayers().values()){
+            count += player.isHasVotedToSkipPhase() ? 1 : 0;
+        }
+
+        return count;
     }
 
     private boolean hasPoliceAlreadyInspected(String playerId) {
@@ -478,5 +492,44 @@ public class GameService {
         var player = currentGame.getPlayers().get(playerId);
         currentGame.getAllPlayerMessages().add(new Message(1, Instant.now().toEpochMilli(), player.getName() + ": " + message));
         return new HttpResponse<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    public HttpResponse<Void> voteSkip(VoteSkipRequest request) {
+        var lobbyId = request.getLobbyId();
+        var playerId = request.getPlayerId();
+        if(currentGame == null){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("No game is active right now");
+        }
+
+        if(!currentGame.getPlayers().containsKey(playerId)){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Given player ID is not in the active game");
+        }
+
+        if(!Objects.equals(lobbyId, currentGame.getLobbyId())){
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Given lobby ID is not active");
+        }
+
+        var player = currentGame.getPlayers().get(playerId);
+        if(!player.isAlive()) {
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Player is not alive");
+        }
+
+        if(currentGame.getCurrentPhase() != Phase.DAY_DISCUSSION) {
+            return (HttpResponse<Void>) HttpResponse.createFailureResponse("Skip can be used only during day discussion phase");
+        }
+
+        player.setHasVotedToSkipPhase(true);
+        return new HttpResponse<>();
+    }
+
+    public void skip(int size) {
+        var count = 0;
+        for(Player player : currentGame.getPlayers().values()){
+            player.setHasVotedToSkipPhase(true);
+            if(count >= size) {
+                break;
+            }
+        }
     }
 }

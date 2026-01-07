@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 @Service
 @Getter
 public class GameConfigService {
-    private final int dayDuration = 10;
-    private final int dayVoteDuration = 10;
-    private final int nightVoteDuration = 10;
+    private final int dayDuration = 180;
+    private final int dayVoteDuration = 30;
+    private final int nightVoteDuration = 30;
     private final int minPlayers = 10;
     private final int maxPlayers = 16;
     private final int lobbyIDLength = 3;

@@ -38,4 +38,9 @@ public class GameController {
     public HttpResponse<Void> chat(@RequestBody ChatRequest request) {
         return gameService.chat(request);
     }
+
+    @PostMapping(path = "/game/voteskip")
+    public HttpResponse<Void> chat(@RequestBody VoteSkipRequest request) {
+        return gameService.voteSkip(request);
+    }
 }

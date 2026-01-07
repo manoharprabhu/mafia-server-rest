@@ -51,6 +51,7 @@ public class GameGetResponse {
     private String yourHeadhunterTarget;
     private GameResult winner;
     private boolean hasInspectedAlready;
+    private int numberOfPlayersSkipDiscussion;
 
     @Getter
     @Setter
@@ -59,6 +60,7 @@ public class GameGetResponse {
         private String name;
         private Role role;
         private boolean alive;
+        private boolean hasSkippedDiscussion;
     }
 
     @Getter

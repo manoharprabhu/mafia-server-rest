@@ -108,6 +108,13 @@ public class Game {
 
         // DAY DISCUSSION PHASE
         if(currentPhase.equals(Phase.DAY_DISCUSSION)) {
+            if(eligibleForPhaseSkip()) {
+                currentPhase = Phase.DAY_VOTING;
+                timeRemainingInCurrentPhase = gameConfigService.getDayVoteDuration();
+                addAllPlayerMessage("Majority has voted to skip the discussion");
+                addAllPlayerMessage("Get ready to vote. (Alteast " + ((int)Math.floor((double) getNumberOfPlayersAlive() / 2)) + " votes required)");
+                return;
+            }
             if(timeRemainingInCurrentPhase > 0) {
                 timeRemainingInCurrentPhase--;
                 return;
@@ -187,6 +194,16 @@ public class Game {
         // goto NIGHT
     }
 
+    private boolean eligibleForPhaseSkip() {
+        var skipVotes = 0;
+        for(Player player : players.values()) {
+            skipVotes += player.hasVotedToSkipPhase ? 1 : 0;
+        }
+
+        var alivePlayersCount = getNumberOfPlayersAlive();
+        return skipVotes >= Math.ceil((double) alivePlayersCount / 2);
+    }
+
     private int getNumberOfPlayersAlive() {
         var count = 0;
         for(Player player : players.values()) {
@@ -207,6 +224,7 @@ public class Game {
             player.setNightTargetPlayerId(null);
             player.setVotedForPlayerId(null);
             player.setInspectedTonight(false);
+            player.setHasVotedToSkipPhase(false);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.ag13.mafia.rest.mafiaclientrest.controllers;
 
 import com.ag13.mafia.rest.mafiaclientrest.DTO.lobby.LobbyJoinRequest;
+import com.ag13.mafia.rest.mafiaclientrest.service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,7 +16,7 @@ public class TestController {
     @Autowired
     LobbyController lobbyController;
     @Autowired
-    GameController gameController;
+    GameService gameService;
 
     private String[] playerNames = new  String[]{
             "Tejram",
@@ -50,5 +51,10 @@ public class TestController {
             }
         }
         return "Success:" + successCount + " - " + " Failure:" + failureCount;
+    }
+
+    @GetMapping(path = "/skip")
+    public void skip(@RequestParam int size) {
+        gameService.skip(size);
     }
 }
