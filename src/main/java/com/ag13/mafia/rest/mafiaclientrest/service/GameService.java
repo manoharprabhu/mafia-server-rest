@@ -260,8 +260,10 @@ public class GameService {
         if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA) {
             // show other mafias
             for(Player p : currentGame.getPlayers().values()){
-                if(p.getRole() == Role.MAFIA || !p.isAlive()) {
+                if(p.getRole() == Role.MAFIA) {
                     result.put(p.getId(), p.getRole());
+                } else if(!p.isAlive()) {
+                    result.put(p.getId(), Role.VILLAGER);
                 }
             }
             return result;
@@ -270,7 +272,12 @@ public class GameService {
         // return dead people's role by default
         for(Player p : currentGame.getPlayers().values()){
             if(!p.isAlive()) {
-                result.put(p.getId(), p.getRole());
+                // return mafia or villager based on roles to not reveal important details during gameplay
+                if(p.getRole() == Role.MAFIA) {
+                    result.put(p.getId(), Role.MAFIA);
+                } else {
+                    result.put(p.getId(), Role.VILLAGER);
+                }
             }
         }
         return result;
