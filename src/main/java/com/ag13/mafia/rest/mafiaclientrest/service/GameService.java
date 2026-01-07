@@ -448,19 +448,11 @@ public class GameService {
         return GamePoliceInspectResponse.create(true);
     }
 
-    private static @NonNull InspectionResult getInspectionResult(Player targetPlayer, String targetPlayerId) {
+    private @NonNull InspectionResult getInspectionResult(Player targetPlayer, String targetPlayerId) {
         var inspection = new InspectionResult();
-
-        if(targetPlayer.getRole() == Role.POLICE || targetPlayer.getRole() == Role.DOCTOR || targetPlayer.getRole() == Role.VILLAGER) {
-            inspection.setPlayerId(targetPlayerId);
-            inspection.setRoleOrientation(RoleOrientation.GOOD);
-        } else if(targetPlayer.getRole() == Role.MAFIA) {
-            inspection.setPlayerId(targetPlayerId);
-            inspection.setRoleOrientation(RoleOrientation.BAD);
-        } else if(targetPlayer.getRole() == Role.HEADHUNTER ||  targetPlayer.getRole() == Role.FOOL) {
-            inspection.setPlayerId(targetPlayerId);
-            inspection.setRoleOrientation(RoleOrientation.UNKNOWN);
-        }
+        var playerRole = targetPlayer.getRole();
+        inspection.setRoleOrientation(playerRole == Role.MAFIA ? RoleOrientation.BAD : RoleOrientation.GOOD);
+        inspection.setPlayerId(targetPlayerId);
         return inspection;
     }
 
