@@ -37,12 +37,13 @@ public class Game {
         if(currentPhase.equals(Phase.START)) {
             // assign the roles
             assignRandomRoles();
+            printRoles();
 //            var it = 1000;
 //            var flag = false;
 //            while(it-- > 0) {
 //                assignRandomRoles();
 //                for(var p : players.values()) {
-//                    if(p.getName().equals("Manohar") && p.getRole() == Role.MAFIA) {
+//                    if(p.getName().equals("Manohar") && p.getRole() == Role.POLICE) {
 //                        flag = true;
 //                        break;
 //                    }
@@ -194,6 +195,12 @@ public class Game {
         // goto NIGHT
     }
 
+    private void printRoles() {
+        for(Player player : players.values()) {
+            log.info("{} - {}", player.getName(), player.getRole());
+        }
+    }
+
 
     public void addAllPlayerMessage(String message) {
         allPlayerMessages.add(new Message(0, Instant.now().toEpochMilli(), message));
@@ -320,6 +327,15 @@ public class Game {
             players.get(key).setRole(roles.get(index++));
         }
 
+        // make one of the mafia as godfather
+        for(var key : players.keySet()) {
+            if(players.get(key).getRole() == Role.MAFIA) {
+                players.get(key).setGodFather(true);
+                break;
+            }
+        }
+
+        // assign target for headhunter
         for(var key : players.keySet()) {
            if(players.get(key).getRole() == Role.HEADHUNTER) {
                var iteration = 100;

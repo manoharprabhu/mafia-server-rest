@@ -42,6 +42,7 @@ public class GameService {
         player.setInspections(new ConcurrentLinkedQueue<>());
         player.setRole(null);
         player.setHeadhunterTargetPlayerId(null);
+        player.setGodFather(false);
         player.setNightTargetPlayerId(null);
         player.setHasActedThisPhase(false);
         player.setInspectedTonight(false);
@@ -58,6 +59,7 @@ public class GameService {
         player.setInspections(new ConcurrentLinkedQueue<>());
         player.setRole(null);
         player.setHeadhunterTargetPlayerId(null);
+        player.setGodFather(false);
         player.setNightTargetPlayerId(null);
         player.setHasActedThisPhase(false);
         player.setInspectedTonight(false);
@@ -166,6 +168,7 @@ public class GameService {
 
         response.setHasInspectedAlready(hasPoliceAlreadyInspected(playerId));
         response.setNumberOfPlayersSkipDiscussion(getNumberOfPlayersWhoSkippedDiscussion());
+        response.setGodFatherId(getGodFatherId(playerId));
 
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
@@ -180,6 +183,19 @@ public class GameService {
         gameResponse.setMessage(null);
         gameResponse.setSuccess(true);
         return gameResponse;
+    }
+
+    private String getGodFatherId(String playerId) {
+        var player = currentGame.getPlayers().get(playerId);
+        if(player.getRole() != Role.MAFIA) {
+            return null;
+        }
+        for(Player p : currentGame.getPlayers().values()) {
+            if(p.isGodFather()) {
+                return p.getId();
+            }
+        }
+        return null;
     }
 
     private int getNumberOfPlayersWhoSkippedDiscussion() {
@@ -272,8 +288,10 @@ public class GameService {
         // return dead people's role by default
         for(Player p : currentGame.getPlayers().values()){
             if(!p.isAlive()) {
+                var isGodFather = p.isGodFather();
                 // return mafia or villager based on roles to not reveal important details during gameplay
-                if(p.getRole() == Role.MAFIA) {
+                // reveal godfather as a villager
+                if(p.getRole() == Role.MAFIA && !isGodFather) {
                     result.put(p.getId(), Role.MAFIA);
                 } else {
                     result.put(p.getId(), Role.VILLAGER);
@@ -456,10 +474,16 @@ public class GameService {
     }
 
     private @NonNull InspectionResult getInspectionResult(Player targetPlayer, String targetPlayerId) {
-        var inspection = new InspectionResult();
         var playerRole = targetPlayer.getRole();
-        inspection.setRoleOrientation(playerRole == Role.MAFIA ? RoleOrientation.BAD : RoleOrientation.GOOD);
+        var isTargetGodfather = targetPlayer.isGodFather();
+
+        var inspection = new InspectionResult();
         inspection.setPlayerId(targetPlayerId);
+        if(isTargetGodfather) {
+            inspection.setRoleOrientation(RoleOrientation.GOOD);
+        } else {
+            inspection.setRoleOrientation(playerRole == Role.MAFIA ? RoleOrientation.BAD : RoleOrientation.GOOD);
+        }
         return inspection;
     }
 
@@ -533,5 +557,9 @@ public class GameService {
                 break;
             }
         }
+    }
+
+    public void kill(String playerId) {
+        currentGame.getPlayers().get(playerId).setAlive(false);
     }
 }

@@ -52,6 +52,7 @@ public class GameGetResponse {
     private GameResult winner;
     private boolean hasInspectedAlready;
     private int numberOfPlayersSkipDiscussion;
+    private String godFatherId;
 
     @Getter
     @Setter

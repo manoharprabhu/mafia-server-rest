@@ -22,6 +22,7 @@ public class Player {
 
     // Role-specific
     String headhunterTargetPlayerId;
+    boolean isGodFather;
 
     // Memory
     ConcurrentLinkedQueue<InspectionResult> inspections;
