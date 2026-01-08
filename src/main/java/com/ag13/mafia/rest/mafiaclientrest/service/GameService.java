@@ -518,7 +518,10 @@ public class GameService {
             return (HttpResponse<Void>) HttpResponse.createFailureResponse("Skip can be used only during day discussion phase");
         }
 
-        player.setHasVotedToSkipPhase(true);
+        if(!player.isHasVotedToSkipPhase()) {
+            player.setHasVotedToSkipPhase(true);
+            currentGame.addAllPlayerMessage(player.getName() + " has voted to skip the discussion");
+        }
         return new HttpResponse<>();
     }
 

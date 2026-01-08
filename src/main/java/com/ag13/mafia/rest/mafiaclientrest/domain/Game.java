@@ -42,7 +42,7 @@ public class Game {
 //            while(it-- > 0) {
 //                assignRandomRoles();
 //                for(var p : players.values()) {
-//                    if(p.getName().equals("M") && p.getRole() == Role.HEADHUNTER) {
+//                    if(p.getName().equals("Manohar") && p.getRole() == Role.MAFIA) {
 //                        flag = true;
 //                        break;
 //                    }
@@ -194,6 +194,11 @@ public class Game {
         // goto NIGHT
     }
 
+
+    public void addAllPlayerMessage(String message) {
+        allPlayerMessages.add(new Message(0, Instant.now().toEpochMilli(), message));
+    }
+
     private boolean eligibleForPhaseSkip() {
         var skipVotes = 0;
         for(Player player : players.values()) {
@@ -213,10 +218,6 @@ public class Game {
         }
 
         return count;
-    }
-
-    private void addAllPlayerMessage(String message) {
-        allPlayerMessages.add(new Message(0, Instant.now().toEpochMilli(), message));
     }
 
     private void resetVotesOfAllPlayers() {
