@@ -3,6 +3,7 @@ package com.ag13.mafia.rest.mafiaclientrest.service;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.HttpResponse;
 import com.ag13.mafia.rest.mafiaclientrest.DTO.game.*;
 import com.ag13.mafia.rest.mafiaclientrest.domain.*;
+import com.ag13.mafia.rest.mafiaclientrest.domain.statemachine.StateMachine;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -102,8 +103,8 @@ public class GameService {
             return (HttpResponse<StartGameResponse>) HttpResponse.createFailureResponse("Given lobby ID is not active");
         }
 
-        this.currentGame.setCurrentPhase(Phase.START);
-        gameTickerService.start(currentGame);
+        var stateMachine = new StateMachine(this.currentGame);
+        gameTickerService.start(stateMachine);
 
         return StartGameResponse.create();
     }

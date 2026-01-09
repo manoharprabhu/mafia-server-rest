@@ -14,6 +14,6 @@ public class GameConfigService {
     private final int lobbyIDLength = 3;
     private final int playerIDLength = 3;
     private final boolean isHeadhunterEnabled = true;
-    private final boolean isFoolEnabled = false;
+    private final boolean isFoolEnabled = true;
     private final int maxUserMessageLength = 200;
 }
