@@ -24,14 +24,6 @@ public class LobbyService {
     }
 
     public HttpResponse<LobbyCreateResponse> createLobby(LobbyCreateRequest request) {
-        if(gameService.getCurrentGame() != null) {
-            log.error("Lobby has already been created");
-            var response = new HttpResponse<LobbyCreateResponse>();
-            response.setSuccess(false);
-            response.setMessage("Lobby has already been created");
-            return response;
-        }
-
         var playerName = request.getPlayerName();
         if(playerName == null || playerName.isEmpty()) {
             log.error("Player name is null or empty");
@@ -49,7 +41,10 @@ public class LobbyService {
     }
 
     public HttpResponse<LobbyJoinResponse> joinLobby(LobbyJoinRequest request) {
-        var currentGame = gameService.getCurrentGame();
+        var playerName = request.getPlayerName();
+        var lobbyId = request.getLobbyId();
+
+        var currentGame = gameService.getGame(lobbyId);
         if(currentGame == null) {
             log.error("There is no active game to join");
             var response = new HttpResponse<LobbyJoinResponse>();
@@ -57,9 +52,6 @@ public class LobbyService {
             response.setMessage("There is no active game to join");
             return response;
         }
-
-        var playerName = request.getPlayerName();
-        var lobbyId = request.getLobbyId();
 
         if(playerName == null || playerName.isEmpty()) {
             log.error("Player name is null or empty");
@@ -102,13 +94,14 @@ public class LobbyService {
         }
 
         var playerId = idGeneratorService.getId(gameConfigService.getPlayerIDLength());
-        gameService.addNewPlayerToExistingGame(playerId, playerName);
+        gameService.addNewPlayerToExistingGame(lobbyId, playerId, playerName);
 
         return LobbyJoinResponse.createSuccessResponse(playerId);
     }
 
     public HttpResponse<LobbyGetResponse> getLobby(LobbyGetRequest request) {
-        var currentGame = gameService.getCurrentGame();
+        var lobbyId = request.getLobbyId();
+        var currentGame = gameService.getGame(lobbyId);
         if(currentGame == null) {
             log.error("There is no active game to get");
             var response = new HttpResponse<LobbyGetResponse>();
@@ -117,7 +110,6 @@ public class LobbyService {
             return response;
         }
 
-        var lobbyId = request.getLobbyId();
         if(lobbyId == null || lobbyId.isEmpty()) {
             log.error("Lobby id is null or empty");
             var response = new HttpResponse<LobbyGetResponse>();
@@ -156,6 +148,6 @@ public class LobbyService {
         for(var key : allPlayers.keySet()) {
             playersList.add(new LobbyGetResponse.Player(key, allPlayers.get(key).getName()));
         }
-        return LobbyGetResponse.createSuccessResponse(playersList, gameService.getCurrentGameHostPlayerId(), currentGame.getCurrentPhase());
+        return LobbyGetResponse.createSuccessResponse(playersList, currentGame.getCurrentGameHostPlayerId(), currentGame.getCurrentPhase());
     }
 }

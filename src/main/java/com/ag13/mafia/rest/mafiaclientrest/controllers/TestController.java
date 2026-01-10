@@ -13,10 +13,14 @@ import java.util.List;
 
 @RestController
 public class TestController {
+    private final LobbyController lobbyController;
+    private final GameService gameService;
+
     @Autowired
-    LobbyController lobbyController;
-    @Autowired
-    GameService gameService;
+    public TestController(LobbyController lobbyController, GameService gameService) {
+        this.lobbyController = lobbyController;
+        this.gameService = gameService;
+    }
 
     private String[] playerNames = new  String[]{
             "Tejram",
@@ -54,17 +58,17 @@ public class TestController {
     }
 
     @GetMapping(path = "/skip")
-    public void skip(@RequestParam int size) {
-        gameService.skip(size);
+    public void skip(@RequestParam int size, @RequestParam String lobbyId) {
+        gameService.skip(lobbyId, size);
     }
 
     @GetMapping(path = "/kill")
-    public void kill(@RequestParam String playerId) {
-        gameService.kill(playerId);
+    public void kill(@RequestParam String playerId, @RequestParam String lobbyId) {
+        gameService.kill(lobbyId, playerId);
     }
 
     @GetMapping(path = "/randomvote")
-    public void randomVote(@RequestParam String playerId) {
-        gameService.randomVote();
+    public void randomVote(@RequestParam String lobbyId) {
+        gameService.randomVote(lobbyId);
     }
 }

@@ -12,8 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 public class LobbyController {
+    private final LobbyService lobbyService;
+
     @Autowired
-    private LobbyService lobbyService;
+    public LobbyController(LobbyService lobbyService) {
+        this.lobbyService = lobbyService;
+    }
     @PostMapping(path = "/lobby/create")
     public HttpResponse<LobbyCreateResponse> createLobby(@RequestBody LobbyCreateRequest request) {
         log.info("Create Lobby");

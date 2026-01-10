@@ -12,8 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 public class GameController {
+    private final GameService gameService;
+
     @Autowired
-    private GameService gameService;
+    public GameController(GameService gameService) {
+        this.gameService = gameService;
+    }
     @PostMapping(path = "/game/state")
     public HttpResponse<GameGetResponse> getState(@RequestBody GameGetRequest request) {
         return gameService.getState(request);

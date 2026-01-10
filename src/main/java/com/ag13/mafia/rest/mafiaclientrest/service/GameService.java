@@ -19,9 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Slf4j
 public class GameService {
     @Getter
-    private Game currentGame;
-    @Getter
-    private String currentGameHostPlayerId;
+    private final ConcurrentHashMap<String, Game> games = new ConcurrentHashMap<>();
 
     final GameTickerService gameTickerService;
 
@@ -33,7 +31,15 @@ public class GameService {
         this.gameConfigService = gameConfigService;
     }
 
-    public void addNewPlayerToExistingGame(String playerId, String playerName) {
+    public Game getGame(String lobbyId) {
+        return games.getOrDefault(lobbyId, null);
+    }
+
+    public void addNewPlayerToExistingGame(String lobbyId, String playerId, String playerName) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null) {
+            return;
+        }
         var player = new Player();
         player.setId(playerId);
         player.setAlive(true);
@@ -47,6 +53,7 @@ public class GameService {
         player.setInspectedTonight(false);
         player.setVotedForPlayerId(null);
         player.setPlayerSpecificMessages(new ConcurrentLinkedQueue<>());
+
         currentGame.getPlayers().put(playerId, player);
     }
 
@@ -79,16 +86,17 @@ public class GameService {
         game.setResult(GameResult.NONE);
         // todo set this from the Player object
         //game.setPlayerSpecificMessages(new ConcurrentHashMap<>());
+        game.setGameConfigService(gameConfigService);
+        game.setCurrentGameHostPlayerId(playerId);
 
-        this.currentGame = game;
-        this.currentGame.setGameConfigService(gameConfigService);
-        this.currentGameHostPlayerId = playerId;
+        games.put(lobbyId, game);
     }
 
     @SuppressWarnings("unchecked")
     public HttpResponse<StartGameResponse> startGame(StartGameRequest request) {
         var lobbyId = request.getLobbyId();
         var playerId = request.getPlayerId();
+        var currentGame = games.get(lobbyId);
         if(currentGame == null){
             return (HttpResponse<StartGameResponse>) HttpResponse.createFailureResponse("No game is active right now");
         }
@@ -101,7 +109,7 @@ public class GameService {
             return (HttpResponse<StartGameResponse>) HttpResponse.createFailureResponse("Given lobby ID is not active");
         }
 
-        var stateMachine = new StateMachine(this.currentGame);
+        var stateMachine = new StateMachine(currentGame);
         gameTickerService.start(stateMachine);
 
         return StartGameResponse.create();
@@ -111,7 +119,7 @@ public class GameService {
     public HttpResponse<GameGetResponse> getState(GameGetRequest request) {
         var lobbyId = request.getLobbyId();
         var playerId = request.getPlayerId();
-
+        var currentGame = games.get(lobbyId);
         // check if the player is in the running game
         if(currentGame == null){
             return (HttpResponse<GameGetResponse>) HttpResponse.createFailureResponse("No game is active right now");
@@ -149,25 +157,25 @@ public class GameService {
 //            response.getPlayerSpecificMessages().put(key, messages);
 //        }
 
-        ConcurrentHashMap<String, Role> visibleRoles = getVisibleRolesForPlayer(playerId);
+        ConcurrentHashMap<String, Role> visibleRoles = getVisibleRolesForPlayer(lobbyId, playerId);
         response.setVisibleRoles(visibleRoles);
 
 
         response.setDayNumber(currentGame.getDayCount());
         response.setTimeRemainingSeconds(currentGame.getTimeRemainingInCurrentPhase());
 
-        ConcurrentHashMap<String, String> voteMap = getVoteMap(playerId);
+        ConcurrentHashMap<String, String> voteMap = getVoteMap(lobbyId, playerId);
         response.setVoteMap(voteMap);
 
-        List<InspectionResult> inspectionResults = getInspectionResults(playerId);
+        List<InspectionResult> inspectionResults = getInspectionResults(lobbyId, playerId);
         response.setInspectionResults(inspectionResults);
 
-        response.setYourHeadhunterTarget(getMyHeadhunterTarget(playerId));
-        response.setWinner(getWinner());
+        response.setYourHeadhunterTarget(getMyHeadhunterTarget(lobbyId, playerId));
+        response.setWinner(getWinner(lobbyId));
 
-        response.setHasInspectedAlready(hasPoliceAlreadyInspected(playerId));
-        response.setNumberOfPlayersSkipDiscussion(getNumberOfPlayersWhoSkippedDiscussion());
-        response.setGodFatherId(getGodFatherId(playerId));
+        response.setHasInspectedAlready(hasPoliceAlreadyInspected(lobbyId, playerId));
+        response.setNumberOfPlayersSkipDiscussion(getNumberOfPlayersWhoSkippedDiscussion(lobbyId));
+        response.setGodFatherId(getGodFatherId(lobbyId, playerId));
 
         var you = new GameGetResponse.You();
         you.setAlive(player.isAlive());
@@ -184,7 +192,12 @@ public class GameService {
         return gameResponse;
     }
 
-    private String getGodFatherId(String playerId) {
+    private String getGodFatherId(String lobbyId, String playerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return null;
+        }
+
         var player = currentGame.getPlayers().get(playerId);
         if(player.getRole() != Role.MAFIA) {
             return null;
@@ -197,7 +210,11 @@ public class GameService {
         return null;
     }
 
-    private int getNumberOfPlayersWhoSkippedDiscussion() {
+    private int getNumberOfPlayersWhoSkippedDiscussion(String lobbyId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return 0;
+        }
         var count = 0;
         for(Player player : currentGame.getPlayers().values()){
             count += player.isHasVotedToSkipPhase() ? 1 : 0;
@@ -206,7 +223,11 @@ public class GameService {
         return count;
     }
 
-    private boolean hasPoliceAlreadyInspected(String playerId) {
+    private boolean hasPoliceAlreadyInspected(String lobbyId, String playerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return false;
+        }
         var player = currentGame.getPlayers().get(playerId);
         if(player.getRole() == Role.POLICE){
             return player.isInspectedTonight();
@@ -215,11 +236,19 @@ public class GameService {
         }
     }
 
-    private GameResult getWinner() {
+    private GameResult getWinner(String lobbyId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return GameResult.NONE;
+        }
         return currentGame.getResult();
     }
 
-    private String getMyHeadhunterTarget(String playerId) {
+    private String getMyHeadhunterTarget(String lobbyId, String playerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return null;
+        }
         var player = currentGame.getPlayers().get(playerId);
         if(player.getRole() != Role.HEADHUNTER) {
             return null;
@@ -228,7 +257,11 @@ public class GameService {
         return player.getHeadhunterTargetPlayerId();
     }
 
-    private List<InspectionResult> getInspectionResults(String playerId) {
+    private List<InspectionResult> getInspectionResults(String lobbyId, String playerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return Collections.emptyList();
+        }
         var result = new ArrayList<InspectionResult>();
         if(currentGame.getPlayers().get(playerId).getRole() != Role.POLICE){
             return result;
@@ -237,10 +270,14 @@ public class GameService {
         return new ArrayList<>(currentGame.getPlayers().get(playerId).getInspections());
     }
 
-    private ConcurrentHashMap<String, String> getVoteMap(String playerId) {
+    private ConcurrentHashMap<String, String> getVoteMap(String lobbyId, String playerId) {
         // show mafia votes only to mafia players at night
         // show everyone's votes to everyone at day
         // show doctor vote only to doctor
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return new ConcurrentHashMap<>();
+        }
         ConcurrentHashMap<String, String> voteMap = new ConcurrentHashMap<>();
         if(currentGame.getPlayers().get(playerId).getRole() == Role.MAFIA && currentGame.getCurrentPhase() == Phase.NIGHT) {
             for(Player p : currentGame.getPlayers().values()) {
@@ -263,7 +300,11 @@ public class GameService {
         return voteMap;
     }
 
-    private ConcurrentHashMap<String, Role> getVisibleRolesForPlayer(String playerId) {
+    private ConcurrentHashMap<String, Role> getVisibleRolesForPlayer(String lobbyId, String playerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return new ConcurrentHashMap<>();
+        }
         var result = new ConcurrentHashMap<String, Role>();
         if(currentGame.getCurrentPhase() == Phase.WIN) {
             for(Player p : currentGame.getPlayers().values()){
@@ -306,6 +347,8 @@ public class GameService {
         var playerId = request.getPlayerId();
         var targetPlayerId = request.getTargetPlayerId();
         var voteType = request.getType();
+        var currentGame = games.get(lobbyId);
+
         // check if the player is in the running game
         if(currentGame == null){
             return (HttpResponse<VotePlayerResponse>) HttpResponse.createFailureResponse("No game is active right now");
@@ -330,13 +373,13 @@ public class GameService {
         var success = false;
         switch (voteType){
             case "villager":
-                success = handleVillagerVote(playerId, targetPlayerId);
+                success = handleVillagerVote(lobbyId, playerId, targetPlayerId);
                 break;
             case "mafia":
-                success = handleMafiaVote(playerId, targetPlayerId);
+                success = handleMafiaVote(lobbyId, playerId, targetPlayerId);
                 break;
             case "doctor":
-                success = handleDoctorVote(playerId, targetPlayerId);
+                success = handleDoctorVote(lobbyId, playerId, targetPlayerId);
                 break;
         }
 
@@ -345,7 +388,11 @@ public class GameService {
         return VotePlayerResponse.create(success);
     }
 
-    private boolean handleDoctorVote(String playerId, String targetPlayerId) {
+    private boolean handleDoctorVote(String lobbyId, String playerId, String targetPlayerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return false;
+        }
         if(!currentGame.getCurrentPhase().equals(Phase.NIGHT)) {
             log.info("Doctor can only vote during NIGHT phase");
             return false;
@@ -368,7 +415,11 @@ public class GameService {
         return true;
     }
 
-    private boolean handleMafiaVote(String playerId, String targetPlayerId) {
+    private boolean handleMafiaVote(String lobbyId, String playerId, String targetPlayerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return false;
+        }
         if(!currentGame.getCurrentPhase().equals(Phase.NIGHT)) {
             log.info("Mafia can only vote during NIGHT phase");
             return false;
@@ -396,7 +447,11 @@ public class GameService {
         return true;
     }
 
-    private boolean handleVillagerVote(String playerId, String targetPlayerId) {
+    private boolean handleVillagerVote(String lobbyId, String playerId, String targetPlayerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return false;
+        }
         if(!currentGame.getCurrentPhase().equals(Phase.DAY_VOTING)) {
             log.info("Villager can only vote during DAY_VOTING phase");
             return false;
@@ -421,7 +476,7 @@ public class GameService {
         var lobbyId = request.getLobbyId();
         var playerId = request.getPlayerId();
         var targetPlayerId = request.getTargetPlayerId();
-
+        var currentGame = games.get(lobbyId);
         if(currentGame == null){
             return (HttpResponse<GamePoliceInspectResponse>) HttpResponse.createFailureResponse("No game is active right now");
         }
@@ -500,6 +555,8 @@ public class GameService {
             message = message.substring(0, gameConfigService.getMaxUserMessageLength()) + "...";
         }
 
+        var currentGame = games.get(lobbyId);
+
         if(currentGame == null){
             return (HttpResponse<Void>) HttpResponse.createFailureResponse("No game is active right now");
         }
@@ -520,6 +577,7 @@ public class GameService {
     public HttpResponse<Void> voteSkip(VoteSkipRequest request) {
         var lobbyId = request.getLobbyId();
         var playerId = request.getPlayerId();
+        var currentGame = games.get(lobbyId);
         if(currentGame == null){
             return (HttpResponse<Void>) HttpResponse.createFailureResponse("No game is active right now");
         }
@@ -548,7 +606,11 @@ public class GameService {
         return new HttpResponse<>();
     }
 
-    public void skip(int size) {
+    public void skip(String lobbyId, int size) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return;
+        }
         var count = 0;
         for(Player player : currentGame.getPlayers().values()){
             player.setHasVotedToSkipPhase(true);
@@ -558,12 +620,17 @@ public class GameService {
         }
     }
 
-    public void kill(String playerId) {
+    public void kill(String lobbyId, String playerId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null){
+            return;
+        }
         currentGame.getPlayers().get(playerId).setAlive(false);
     }
 
-    public void randomVote() {
-        if(currentGame.getCurrentPhase() != Phase.DAY_VOTING) {
+    public void randomVote(String lobbyId) {
+        var currentGame = games.get(lobbyId);
+        if(currentGame == null || currentGame.getCurrentPhase() != Phase.DAY_VOTING) {
             return;
         }
         var random = new Random();

@@ -29,6 +29,7 @@ public class Game {
     ConcurrentLinkedQueue<Message> allPlayerMessages;
     int timeRemainingInCurrentPhase;
     GameConfigService gameConfigService;
+    String currentGameHostPlayerId;
 
     public void addAllPlayerMessage(String message) {
         allPlayerMessages.add(new Message(0, Instant.now().toEpochMilli(), message));

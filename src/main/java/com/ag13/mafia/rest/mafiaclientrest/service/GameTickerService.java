@@ -7,6 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.swing.plaf.nimbus.State;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -14,37 +18,35 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Slf4j
 public class GameTickerService {
-    private StateMachine stateMachine;
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
-    private Runnable task;
-
-    public void start(StateMachine stateMachine) {
-        if(this.stateMachine != null) {
-            log.info("Game is already running");
-            return;
-        }
-        this.stateMachine = stateMachine;
-        task = this::tick;
-        executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+    private final ConcurrentLinkedDeque<StateMachine> stateMachine = new ConcurrentLinkedDeque<>();
+    private final HashSet<StateMachine> removalSet = new HashSet<>();
+    public GameTickerService() {
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
+        executor.scheduleAtFixedRate(this::tick, 0, 1, TimeUnit.SECONDS);
     }
 
-    public void stop() {
-        if(this.stateMachine == null) {
-            log.info("Game is already stopped");
-            return;
+    public void start(StateMachine stateMachine) {
+        this.stateMachine.add(stateMachine);
+    }
+
+    public void removeStoppedStateMachines() {
+        for (StateMachine stateMachine : removalSet) {
+            this.stateMachine.remove(stateMachine);
         }
-        this.stateMachine = null;
-        this.executor.shutdownNow();
-        task = null;
     }
 
     private void tick() {
         try {
-            var phase = this.stateMachine.tick();
-            if(phase == Phase.WIN) {
-                log.info("Game has ended. stopping the ticker");
-                stop();
+            long startTime = System.nanoTime();
+            removeStoppedStateMachines();
+            for(StateMachine stateMachine: this.stateMachine) {
+                var phase = stateMachine.tick();
+                if(phase == Phase.WIN) {
+                    removalSet.add(stateMachine);
+                }
             }
+            long endTime = System.nanoTime();
+            log.info("Tick time: {} ms, {} games", (endTime - startTime) / 1_000_000, this.stateMachine.size());
         } catch (Exception ex) {
             log.error("Game ticking failed", ex);
         }
