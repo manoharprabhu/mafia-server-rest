@@ -27,6 +27,7 @@ public class GameService {
 
     final GameConfigService gameConfigService;
 
+    @Autowired
     public GameService(GameTickerService gameTickerService, GameConfigService gameConfigService) {
         this.gameTickerService = gameTickerService;
         this.gameConfigService = gameConfigService;

@@ -1,6 +1,7 @@
 package com.ag13.mafia.rest.mafiaclientrest.service;
 
 import com.ag13.mafia.rest.mafiaclientrest.domain.Game;
+import com.ag13.mafia.rest.mafiaclientrest.domain.Phase;
 import com.ag13.mafia.rest.mafiaclientrest.domain.statemachine.StateMachine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,11 @@ public class GameTickerService {
 
     private void tick() {
         try {
-            this.stateMachine.tick();
+            var phase = this.stateMachine.tick();
+            if(phase == Phase.WIN) {
+                log.info("Game has ended. stopping the ticker");
+                stop();
+            }
         } catch (Exception ex) {
             log.error("Game ticking failed", ex);
         }

@@ -12,14 +12,16 @@ import java.util.ArrayList;
 @Service
 @Slf4j
 public class LobbyService {
-    @Autowired
-    private IdGeneratorService idGeneratorService;
-    @Autowired
-    private GameService gameService;
+    private final IdGeneratorService idGeneratorService;
+    private final GameService gameService;
+    private final GameConfigService gameConfigService;
 
     @Autowired
-    private GameConfigService gameConfigService;
-
+    public LobbyService(GameConfigService gameConfigService, GameService gameService, IdGeneratorService idGeneratorService) {
+        this.gameConfigService = gameConfigService;
+        this.gameService = gameService;
+        this.idGeneratorService = idGeneratorService;
+    }
 
     public HttpResponse<LobbyCreateResponse> createLobby(LobbyCreateRequest request) {
         if(gameService.getCurrentGame() != null) {

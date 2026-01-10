@@ -24,11 +24,14 @@ public class StateMachine {
         currentState = states.get(Phase.START);
     }
 
-    public void tick() {
+    public Phase tick() {
         if(currentState != null) {
             var nextPhase = currentState.execute();
             game.setCurrentPhase(nextPhase);
             currentState = states.get(nextPhase);
+            return nextPhase;
         }
+
+        return null;
     }
 }
