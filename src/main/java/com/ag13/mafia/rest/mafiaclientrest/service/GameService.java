@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -562,5 +559,25 @@ public class GameService {
 
     public void kill(String playerId) {
         currentGame.getPlayers().get(playerId).setAlive(false);
+    }
+
+    public void randomVote() {
+        if(currentGame.getCurrentPhase() != Phase.DAY_VOTING) {
+            return;
+        }
+        var random = new Random();
+        var allPlayers = new ArrayList<>(currentGame.getPlayers().values());
+        for(var i = 0; i < 6; i++) {
+            var targetIndex = random.nextInt(allPlayers.size());
+            if(targetIndex == i) {
+                continue;
+            }
+            allPlayers.get(i).setVotedForPlayerId(
+                    allPlayers.get(
+                            random.nextInt(allPlayers.size())
+                    ).getId()
+            );
+        }
+
     }
 }

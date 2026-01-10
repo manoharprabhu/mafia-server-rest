@@ -62,4 +62,9 @@ public class TestController {
     public void kill(@RequestParam String playerId) {
         gameService.kill(playerId);
     }
+
+    @GetMapping(path = "/randomvote")
+    public void randomVote(@RequestParam String playerId) {
+        gameService.randomVote();
+    }
 }
