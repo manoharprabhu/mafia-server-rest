@@ -21,6 +21,7 @@ public class StartState implements IState {
     public Phase execute() {
         // assign the roles
         assignRandomRoles();
+        appendNumberToNames();
 //            var it = 1000;
 //            var flag = false;
 //            while(it-- > 0) {
@@ -40,6 +41,14 @@ public class StartState implements IState {
         game.setTimeRemainingInCurrentPhase(game.getGameConfigService().getNightVoteDuration());
         game.addAllPlayerMessage("Starting the game with " + game.getPlayers().size() + " players");
         return Phase.NIGHT;
+    }
+
+    // Make it easy to remember and locate people on the grid
+    private void appendNumberToNames() {
+        var allPlayers = new ArrayList<>(game.getPlayers().values());
+        for(var i = 0; i < allPlayers.size(); i++) {
+            allPlayers.get(i).setName((i + 1) + " " + allPlayers.get(i).getName());
+        }
     }
 
     private void printRoles() {
